@@ -2,6 +2,7 @@
 set -euo pipefail
 
 SERVICE_NAME="${1:?Usage: ./bootstrap.sh <service_name>}"
+SKIP_INFRA="${OML_BOOTSTRAP_SKIP_INFRA:-0}"
 
 # Validate service name (lowercase alphanumeric + hyphens only)
 if [[ ! "${SERVICE_NAME}" =~ ^[a-z][a-z0-9-]*$ ]]; then
@@ -18,16 +19,19 @@ find . -type f \( -name "*.toml" -o -name "*.yml" -o -name "*.yaml" \
   ! -path './.git/*' ! -path '*/node_modules/*' -print0 \
   | xargs -0 perl -pi -e "s/__SERVICE_NAME__/${SERVICE_NAME}/g"
 
-# 2. Create per-service Cloudflare R2 bucket
-echo "Creating R2 bucket: oml-${SERVICE_NAME}-uploads"
-npx wrangler r2 bucket create "oml-${SERVICE_NAME}-uploads"
+# 2. Create per-service Cloudflare/Turso resources unless this is a CI smoke test
+if [[ "${SKIP_INFRA}" == "1" ]]; then
+  echo "Skipping infrastructure provisioning (OML_BOOTSTRAP_SKIP_INFRA=1)"
+else
+  echo "Creating R2 bucket: oml-${SERVICE_NAME}-uploads"
+  npx wrangler r2 bucket create "oml-${SERVICE_NAME}-uploads"
 
-# 3. Create per-service Turso databases
-echo "Creating Turso databases..."
-turso db create "oml-${SERVICE_NAME}-db-prod" --group ohmylike-app
-turso db create "oml-${SERVICE_NAME}-db-dev" --group ohmylike-app
+  echo "Creating Turso databases..."
+  turso db create "oml-${SERVICE_NAME}-db-prod" --group ohmylike-app
+  turso db create "oml-${SERVICE_NAME}-db-dev" --group ohmylike-app
+fi
 
-# 4. Remove bootstrap.sh (one-time use)
+# 3. Remove bootstrap.sh (one-time use)
 rm -- "$0"
 
 echo ""

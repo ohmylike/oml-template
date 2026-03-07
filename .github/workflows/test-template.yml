@@ -1,0 +1,49 @@
+name: Test Template
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bootstrap-smoke:
+    runs-on: ubuntu-latest
+    env:
+      SERVICE_NAME: template-smoke
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "25"
+          cache: "pnpm"
+
+      - name: Bootstrap generated repository
+        run: |
+          set -euo pipefail
+          tmpdir="$(mktemp -d)"
+          trap 'rm -rf "$tmpdir"' EXIT
+
+          git archive --format=tar HEAD | tar -xf - -C "$tmpdir"
+          cd "$tmpdir"
+
+          OML_BOOTSTRAP_SKIP_INFRA=1 ./bootstrap.sh "$SERVICE_NAME"
+
+          if grep -R -n "__SERVICE_NAME__" .; then
+            echo "Unreplaced template placeholders remain"
+            exit 1
+          fi
+
+          if [ -e bootstrap.sh ]; then
+            echo "bootstrap.sh should remove itself after initialization"
+            exit 1
+          fi
+
+          pnpm install --frozen-lockfile
+          pnpm build
+          pnpm test
+          pnpm test:cli:e2e
