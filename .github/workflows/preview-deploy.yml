@@ -1,0 +1,19 @@
+name: Preview Deploy
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  pull-requests: write
+
+jobs:
+  preview:
+    uses: ohmylike/oml-workflows/.github/workflows/preview-deploy.yml@main
+    with:
+      service_name: __SERVICE_NAME__
+    secrets: inherit

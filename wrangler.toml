@@ -1,0 +1,46 @@
+name = "oml-__SERVICE_NAME__"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# --- Production: Custom Domain ---
+[[routes]]
+pattern = "__SERVICE_NAME__.ohmylike.app"
+custom_domain = true
+
+# --- Production: Variables ---
+[vars]
+ENVIRONMENT = "production"
+SERVICE_NAME = "__SERVICE_NAME__"
+
+# --- Production: KV ---
+[[kv_namespaces]]
+binding = "CACHE"
+id = "0154d85d8ec744069f871b097435751f"
+
+# --- Production: R2 ---
+[[r2_buckets]]
+binding = "UPLOADS"
+bucket_name = "oml-__SERVICE_NAME__-uploads"
+
+# =============================================================================
+# Preview
+# =============================================================================
+# Worker name is overridden by --name flag in GitHub Actions
+# Custom Domain is attached via Cloudflare API dynamically
+# =============================================================================
+[env.preview]
+
+[env.preview.vars]
+ENVIRONMENT = "preview"
+SERVICE_NAME = "__SERVICE_NAME__"
+
+# --- Preview: KV ---
+[[env.preview.kv_namespaces]]
+binding = "CACHE"
+id = "3a218b77de944724a6c18a64f67bd078"
+
+# --- Preview: R2 ---
+[[env.preview.r2_buckets]]
+binding = "UPLOADS"
+bucket_name = "oml-preview-uploads"
