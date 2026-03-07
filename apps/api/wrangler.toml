@@ -3,10 +3,6 @@ main = "src/index.ts"
 compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
 
-[[routes]]
-pattern = "api.__SERVICE_NAME__.ohmylike.app/*"
-zone_name = "ohmylike.app"
-
 [vars]
 ENVIRONMENT = "development"
 SERVICE_NAME = "__SERVICE_NAME__"

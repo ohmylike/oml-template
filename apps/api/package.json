@@ -12,7 +12,8 @@
   "scripts": {
     "build": "tsdown",
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy --env production",
+    "deploy:preview": "wrangler deploy --name ${PREVIEW_WORKER}-api"
   },
   "dependencies": {
     "@oml-__SERVICE_NAME__/core": "workspace:*",

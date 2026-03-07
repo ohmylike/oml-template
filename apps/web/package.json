@@ -7,8 +7,8 @@
     "build": "vite build && tsdown",
     "dev": "vite build && (vite build --watch & wrangler dev)",
     "dev:vite": "vite",
-    "deploy": "vite build && wrangler deploy",
-    "deploy:production": "vite build --mode production && wrangler deploy --env production"
+    "deploy": "vite build --mode production && wrangler deploy --env production",
+    "deploy:preview": "wrangler deploy --name ${PREVIEW_WORKER}-web"
   },
   "dependencies": {
     "@oml-__SERVICE_NAME__/api-client": "workspace:*",

@@ -16,7 +16,10 @@
     "dev:cli": "pnpm --filter @oml-__SERVICE_NAME__/cli dev",
     "deploy": "pnpm run deploy:api & pnpm run deploy:web & wait",
     "deploy:api": "pnpm --filter @oml-__SERVICE_NAME__/api deploy",
-    "deploy:web": "pnpm --filter @oml-__SERVICE_NAME__/web deploy"
+    "deploy:web": "pnpm --filter @oml-__SERVICE_NAME__/web deploy",
+    "deploy:preview": "pnpm run deploy:preview:api & pnpm run deploy:preview:web & wait",
+    "deploy:preview:api": "pnpm --filter @oml-__SERVICE_NAME__/api deploy:preview",
+    "deploy:preview:web": "pnpm --filter @oml-__SERVICE_NAME__/web deploy:preview"
   },
   "devDependencies": {
     "@libsql/client": "^0.17",
