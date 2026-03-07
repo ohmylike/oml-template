@@ -57,3 +57,4 @@ oml-__SERVICE_NAME__: Monorepo for the __SERVICE_NAME__ service on ohmylike.app.
 - Ensure tests pass before creating a PR
 - 1 Issue = 1 PR
 - Use conventional commits
+- After pushing to a branch, always check if a PR exists for the branch (`gh pr view`). If a PR exists, output its URL. If not, show the URL to create one (e.g. `https://github.com/{owner}/{repo}/compare/{branch}?expand=1`).
