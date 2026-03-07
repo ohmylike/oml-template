@@ -9,6 +9,13 @@ on:
         description: "PR number for manual trigger"
         required: true
         type: string
+      action:
+        description: "deploy or cleanup"
+        default: "deploy"
+        type: choice
+        options:
+          - deploy
+          - cleanup
 
 concurrency:
   group: preview-${{ github.event.pull_request.number || inputs.pr_number }}
@@ -25,6 +32,7 @@ jobs:
     with:
       service_name: __SERVICE_NAME__
       pr_number: ${{ github.event.pull_request.number || inputs.pr_number }}
+      action: ${{ inputs.action || 'deploy' }}
     secrets:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
