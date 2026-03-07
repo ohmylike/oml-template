@@ -8,7 +8,7 @@ on:
       pr_number:
         description: "PR number for manual trigger"
         required: true
-        type: number
+        type: string
 
 concurrency:
   group: preview-${{ github.event.pull_request.number || inputs.pr_number }}
