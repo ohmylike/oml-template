@@ -13,6 +13,7 @@ permissions:
 
 jobs:
   preview:
+    if: github.repository != 'ohmylike/oml-template'
     uses: ohmylike/oml-workflows/.github/workflows/preview-deploy.yml@main
     with:
       service_name: __SERVICE_NAME__
