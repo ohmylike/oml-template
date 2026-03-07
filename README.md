@@ -43,3 +43,10 @@ pnpm deploy       # api + web to production
 ```
 
 Preview environments are automatically created on PR open and destroyed on PR close.
+
+## Observability
+
+- Every API response includes `X-Request-Id`. On Cloudflare, the value reuses `cf-ray` when available.
+- Tail API logs locally with `pnpm logs:api` or `pnpm logs:api:production`.
+- In Cloudflare Workers Logs / Query Builder, search by `requestId`, `cfRay`, or `event="request_error"`.
+- API deploys upload source maps, so production stack traces are easier to read in Cloudflare.

@@ -17,6 +17,8 @@
     "dev:web": "pnpm --filter @oml-__SERVICE_NAME__/web dev",
     "dev:www": "pnpm --filter @oml-__SERVICE_NAME__/www dev",
     "dev:cli": "pnpm --filter @oml-__SERVICE_NAME__/cli dev",
+    "logs:api": "pnpm --filter @oml-__SERVICE_NAME__/api logs",
+    "logs:api:production": "pnpm --filter @oml-__SERVICE_NAME__/api logs:production",
     "deploy": "pnpm run deploy:api & pnpm run deploy:web & wait",
     "deploy:api": "pnpm --filter @oml-__SERVICE_NAME__/api deploy",
     "deploy:web": "pnpm --filter @oml-__SERVICE_NAME__/web deploy",

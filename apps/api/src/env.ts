@@ -11,6 +11,7 @@ export interface AppBindings {
 
 export interface AppVariables {
   db: Db
+  requestId: string
 }
 
 export interface AppEnv {
