@@ -1,0 +1,23 @@
+{
+  "name": "@oml-__SERVICE_NAME__/api-client",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsdown"
+  },
+  "dependencies": {
+    "@oml-__SERVICE_NAME__/api": "workspace:*",
+    "hono": "^4.12"
+  },
+  "devDependencies": {
+    "tsdown": "^0.21",
+    "typescript": "^5.9"
+  }
+}

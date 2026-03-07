@@ -1,0 +1,33 @@
+{
+  "name": "@oml-__SERVICE_NAME__/www",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite build && vite preview",
+    "deploy": "vite build && wrangler deploy",
+    "deploy:production": "CLOUDFLARE_ENV=production vite build --mode production && wrangler deploy --env production"
+  },
+  "dependencies": {
+    "@cloudflare/vite-plugin": "^1.26",
+    "@tanstack/react-router": "^1.166",
+    "@tanstack/react-start": "^1.166",
+    "react": "^19.2",
+    "react-dom": "^19.2"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4",
+    "@tailwindcss/vite": "^4.2",
+    "@tanstack/react-router-devtools": "^1.166",
+    "@tanstack/router-plugin": "^1.166",
+    "@types/react": "^19.2",
+    "@types/react-dom": "^19.2",
+    "@vitejs/plugin-react": "^5.1",
+    "tailwindcss": "^4.2",
+    "typescript": "^5.9",
+    "vite": "^7.3",
+    "wrangler": "^4"
+  }
+}

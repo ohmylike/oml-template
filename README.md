@@ -1,6 +1,6 @@
 # oml-__SERVICE_NAME__
 
-Cloudflare Workers + Hono service for ohmylike.app.
+Monorepo for the __SERVICE_NAME__ service on ohmylike.app.
 
 ## Setup
 
@@ -12,20 +12,34 @@ Run `./bootstrap.sh __SERVICE_NAME__` to initialize, then:
 git add -A && git commit -m "bootstrap: initialize oml-__SERVICE_NAME__" && git push
 ```
 
+## Structure
+
+```
+apps/
+  api/     Hono API (Cloudflare Workers)
+  cli/     CLI tool (gunshi)
+  web/     React SPA (TanStack Router + Query, Cloudflare Workers)
+  www/     Landing site (TanStack Start, SSR)
+packages/
+  core/        Business logic, DB schema (Drizzle + Turso)
+  api-client/  Type-safe API client (Hono RPC)
+```
+
 ## Development
 
 ```bash
-npm install
-npm test
-npx wrangler dev
+pnpm install
+pnpm build
+pnpm test
+pnpm dev          # api + web
+pnpm dev:www      # www (TanStack Start)
+pnpm dev:cli      # cli
 ```
 
 ## Deploy
 
-Production deploy (manual for v0):
-
 ```bash
-npx wrangler deploy
+pnpm deploy       # api + web to production
 ```
 
 Preview environments are automatically created on PR open and destroyed on PR close.

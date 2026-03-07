@@ -1,0 +1,42 @@
+name = "oml-__SERVICE_NAME__-web"
+main = "src/worker.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+ENVIRONMENT = "development"
+SERVICE_NAME = "__SERVICE_NAME__"
+API_ORIGIN = "http://localhost:8787"
+
+[dev]
+port = 8788
+
+[assets]
+directory = "./dist/client"
+binding = "ASSETS"
+run_worker_first = true
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "0154d85d8ec744069f871b097435751f"
+preview_id = "3a218b77de944724a6c18a64f67bd078"
+
+[observability]
+enabled = true
+
+[observability.logs]
+enabled = true
+invocation_logs = true
+head_sampling_rate = 1
+
+[env.production]
+name = "oml-__SERVICE_NAME__-web"
+
+[[env.production.routes]]
+pattern = "__SERVICE_NAME__.ohmylike.app"
+custom_domain = true
+
+[env.production.vars]
+ENVIRONMENT = "production"
+SERVICE_NAME = "__SERVICE_NAME__"
+API_ORIGIN = "https://api.__SERVICE_NAME__.ohmylike.app"

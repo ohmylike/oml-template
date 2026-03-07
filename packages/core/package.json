@@ -1,0 +1,42 @@
+{
+  "name": "@oml-__SERVICE_NAME__/core",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./db/schema": {
+      "types": "./dist/db/schema.d.ts",
+      "import": "./dist/db/schema.js"
+    },
+    "./db/client": {
+      "types": "./dist/db/client.d.ts",
+      "import": "./dist/db/client.js"
+    },
+    "./db/migrate": {
+      "types": "./dist/db/migrate.d.ts",
+      "import": "./dist/db/migrate.js"
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/db/run-migrate.ts",
+    "db:migrate:dev": "OML_ENV=dev tsx src/db/run-migrate.ts",
+    "db:migrate:prod": "OML_ENV=prod tsx src/db/run-migrate.ts"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.17",
+    "drizzle-orm": "^0.45",
+    "valibot": "^1.2.0"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31",
+    "tsdown": "^0.21",
+    "tsx": "^4.21",
+    "typescript": "^5.9"
+  }
+}

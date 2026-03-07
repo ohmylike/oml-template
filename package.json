@@ -1,21 +1,30 @@
 {
   "name": "oml-__SERVICE_NAME__",
+  "version": "0.0.1",
   "private": true,
+  "packageManager": "pnpm@10.30.3",
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
+    "build": "pnpm -r build",
     "test": "vitest run",
-    "test:watch": "vitest"
-  },
-  "dependencies": {
-    "hono": "^4.7.0"
+    "test:watch": "vitest",
+    "test:e2e": "vitest run --config vitest.config.e2e.ts",
+    "dev": "pnpm run dev:api & pnpm run dev:web & wait",
+    "dev:api": "pnpm --filter @oml-__SERVICE_NAME__/api dev",
+    "dev:web": "pnpm --filter @oml-__SERVICE_NAME__/web dev",
+    "dev:www": "pnpm --filter @oml-__SERVICE_NAME__/www dev",
+    "dev:cli": "pnpm --filter @oml-__SERVICE_NAME__/cli dev",
+    "deploy": "pnpm run deploy:api & pnpm run deploy:web & wait",
+    "deploy:api": "pnpm --filter @oml-__SERVICE_NAME__/api deploy",
+    "deploy:web": "pnpm --filter @oml-__SERVICE_NAME__/web deploy"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.8.0",
-    "@cloudflare/workers-types": "^4.20250214.0",
-    "typescript": "^5.7.0",
-    "vitest": "^3.0.0",
-    "wrangler": "^4.0.0"
+    "@libsql/client": "^0.17",
+    "@playwright/test": "^1.58",
+    "@types/node": "^25",
+    "tsdown": "^0.21",
+    "tsx": "^4.21",
+    "typescript": "^5.9",
+    "vitest": "^4.0"
   }
 }

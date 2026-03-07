@@ -1,0 +1,24 @@
+{
+  "name": "@oml-__SERVICE_NAME__/cli",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "oml-__SERVICE_NAME__": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@oml-__SERVICE_NAME__/api": "workspace:*",
+    "@oml-__SERVICE_NAME__/api-client": "workspace:*",
+    "@oml-__SERVICE_NAME__/core": "workspace:*",
+    "gunshi": "^0.29"
+  },
+  "devDependencies": {
+    "tsdown": "^0.21",
+    "tsx": "^4.21",
+    "typescript": "^5.9"
+  }
+}

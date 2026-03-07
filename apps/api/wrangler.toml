@@ -1,0 +1,45 @@
+name = "oml-__SERVICE_NAME__-api"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[routes]]
+pattern = "api.__SERVICE_NAME__.ohmylike.app/*"
+zone_name = "ohmylike.app"
+
+[vars]
+ENVIRONMENT = "development"
+SERVICE_NAME = "__SERVICE_NAME__"
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "0154d85d8ec744069f871b097435751f"
+preview_id = "3a218b77de944724a6c18a64f67bd078"
+
+[[r2_buckets]]
+binding = "UPLOADS"
+bucket_name = "oml-__SERVICE_NAME__-uploads-dev"
+preview_bucket_name = "oml-preview-uploads"
+
+[observability]
+enabled = true
+
+[observability.logs]
+enabled = true
+invocation_logs = true
+head_sampling_rate = 1
+
+[env.production]
+name = "oml-__SERVICE_NAME__-api"
+
+[[env.production.routes]]
+pattern = "api.__SERVICE_NAME__.ohmylike.app/*"
+zone_name = "ohmylike.app"
+
+[env.production.vars]
+ENVIRONMENT = "production"
+SERVICE_NAME = "__SERVICE_NAME__"
+
+[[env.production.r2_buckets]]
+binding = "UPLOADS"
+bucket_name = "oml-__SERVICE_NAME__-uploads"

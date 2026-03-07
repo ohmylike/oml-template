@@ -2,26 +2,54 @@
 
 ## Project
 
-oml-__SERVICE_NAME__: Cloudflare Workers + Hono service.
-Part of the ohmylike.app multi-service architecture.
+oml-__SERVICE_NAME__: Monorepo for the __SERVICE_NAME__ service on ohmylike.app.
+
+## Structure
+
+- `apps/api` - Hono API on Cloudflare Workers
+- `apps/cli` - CLI tool using gunshi
+- `apps/web` - React SPA (TanStack Router/Query) on Cloudflare Workers
+- `apps/www` - Landing site (TanStack Start SSR) on Cloudflare Workers
+- `packages/core` - Business logic, DB (Drizzle + Turso), validation (valibot)
+- `packages/api-client` - Type-safe API client (Hono RPC)
 
 ## Domain
 
-- Production: __SERVICE_NAME__.ohmylike.app
+- Production API: api.__SERVICE_NAME__.ohmylike.app
+- Production Web: __SERVICE_NAME__.ohmylike.app
+- Production WWW: www.__SERVICE_NAME__.ohmylike.app
 - Preview: pr-{N}.__SERVICE_NAME__.ohmylike.app
 
 ## Commands
 
-- `npm test` - Run tests
-- `npx wrangler dev` - Local dev server
-- `npx wrangler deploy` - Production deploy
+- `pnpm install` - Install dependencies
+- `pnpm build` - Build all packages/apps
+- `pnpm test` - Run unit tests
+- `pnpm test:e2e` - Run e2e tests
+- `pnpm dev` - Dev server (api + web)
+- `pnpm dev:www` - Dev server (www)
+- `pnpm dev:cli` - Run CLI in dev mode
+- `pnpm deploy` - Deploy api + web
+
+## Tech Stack
+
+- pnpm workspace monorepo
+- TypeScript (strict), tsdown (build)
+- Hono (API), Valibot (validation)
+- Drizzle ORM + Turso (SQLite DB)
+- TanStack Router/Query (web SPA)
+- TanStack Start (www SSR)
+- Tailwind CSS v4
+- Vitest (unit), Playwright (e2e)
+- gunshi (CLI)
+- Cloudflare Workers / KV / R2
 
 ## Naming Convention
 
-- Worker: oml-{service}
+- Worker: oml-{service}-{app}
 - DB: oml-{service}-db-{env}
 - KV key: {service}:{key}
-- R2 key (preview): {service}/pr-{N}/{path}
+- R2 bucket: oml-{service}-uploads
 
 ## Rules
 
