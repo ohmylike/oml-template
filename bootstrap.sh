@@ -17,22 +17,16 @@ find . -type f \( -name "*.toml" -o -name "*.yml" -o -name "*.yaml" \
   ! -path './.git/*' \
   -exec sed -i '' "s/__SERVICE_NAME__/${SERVICE_NAME}/g" {} +
 
-# 2. Replace KV namespace IDs (set via environment variables)
-KV_CACHE_PROD_ID="${OML_KV_CACHE_PROD_ID:?Set OML_KV_CACHE_PROD_ID}"
-KV_CACHE_PREVIEW_ID="${OML_KV_CACHE_PREVIEW_ID:?Set OML_KV_CACHE_PREVIEW_ID}"
-sed -i '' "s/__KV_CACHE_PROD_ID__/${KV_CACHE_PROD_ID}/g" wrangler.toml
-sed -i '' "s/__KV_CACHE_PREVIEW_ID__/${KV_CACHE_PREVIEW_ID}/g" wrangler.toml
-
-# 3. Create per-service Cloudflare R2 bucket
+# 2. Create per-service Cloudflare R2 bucket
 echo "Creating R2 bucket: oml-${SERVICE_NAME}-uploads"
 npx wrangler r2 bucket create "oml-${SERVICE_NAME}-uploads"
 
-# 4. Create per-service Turso databases
+# 3. Create per-service Turso databases
 echo "Creating Turso databases..."
 turso db create "oml-${SERVICE_NAME}-db-prod"
 turso db create "oml-${SERVICE_NAME}-db-dev"
 
-# 5. Remove bootstrap.sh (one-time use)
+# 4. Remove bootstrap.sh (one-time use)
 rm -- "$0"
 
 echo ""
