@@ -2,6 +2,7 @@ name = "oml-__SERVICE_NAME__-www"
 main = "@tanstack/react-start/server-entry"
 compatibility_date = "2024-12-01"
 compatibility_flags = ["nodejs_compat"]
+workers_dev = false
 
 [vars]
 ENVIRONMENT = "development"
@@ -16,6 +17,7 @@ head_sampling_rate = 1
 
 [env.production]
 name = "oml-__SERVICE_NAME__-www"
+workers_dev = false
 routes = [
   { pattern = "www.__SERVICE_NAME__.ohmylike.app", custom_domain = true }
 ]

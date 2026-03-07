@@ -2,6 +2,7 @@ name = "oml-__SERVICE_NAME__-api"
 main = "src/index.ts"
 compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
+workers_dev = false
 
 [vars]
 ENVIRONMENT = "development"
@@ -27,6 +28,7 @@ head_sampling_rate = 1
 
 [env.production]
 name = "oml-__SERVICE_NAME__-api"
+workers_dev = false
 
 [[env.production.routes]]
 pattern = "api.__SERVICE_NAME__.ohmylike.app/*"

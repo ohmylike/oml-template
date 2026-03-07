@@ -8,7 +8,7 @@
     "dev": "vite build && (vite build --watch & wrangler dev)",
     "dev:vite": "vite",
     "deploy": "vite build --mode production && wrangler deploy --env production",
-    "deploy:preview": "wrangler deploy --name ${PREVIEW_WORKER}-web --var API_ORIGIN:https://${PREVIEW_WORKER}-api.ohmylike.workers.dev"
+    "deploy:preview": "wrangler deploy --name ${PREVIEW_WORKER}-web --var API_ORIGIN:https://${PREVIEW_API_DOMAIN}"
   },
   "dependencies": {
     "@oml-__SERVICE_NAME__/api-client": "workspace:*",
