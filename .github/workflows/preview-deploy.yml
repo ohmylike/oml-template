@@ -3,12 +3,19 @@ name: Preview Deploy
 on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number for manual trigger"
+        required: true
+        type: number
 
 concurrency:
-  group: preview-${{ github.event.pull_request.number }}
+  group: preview-${{ github.event.pull_request.number || inputs.pr_number }}
   cancel-in-progress: true
 
 permissions:
+  contents: read
   pull-requests: write
 
 jobs:
@@ -17,6 +24,7 @@ jobs:
     uses: ohmylike/oml-workflows/.github/workflows/preview-deploy.yml@main
     with:
       service_name: __SERVICE_NAME__
+      pr_number: ${{ github.event.pull_request.number || inputs.pr_number }}
     secrets:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

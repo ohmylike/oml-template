@@ -10,6 +10,7 @@ API_ORIGIN = "http://localhost:8787"
 
 [dev]
 port = 8788
+inspector_port = 9230
 
 [assets]
 directory = "./dist/client"
