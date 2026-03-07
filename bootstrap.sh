@@ -3,6 +3,7 @@ set -euo pipefail
 
 SERVICE_NAME="${1:?Usage: ./bootstrap.sh <service_name>}"
 SKIP_INFRA="${OML_BOOTSTRAP_SKIP_INFRA:-0}"
+KV_NAMESPACE_ID="${OML_BOOTSTRAP_KV_NAMESPACE_ID:-0154d85d8ec744069f871b097435751f}"
 
 # Validate service name (lowercase alphanumeric + hyphens only)
 if [[ ! "${SERVICE_NAME}" =~ ^[a-z][a-z0-9-]*$ ]]; then
@@ -12,12 +13,12 @@ fi
 
 echo "Bootstrapping oml-${SERVICE_NAME}..."
 
-# 1. Replace __SERVICE_NAME__ placeholder
+# 1. Replace service and shared infra placeholders
 find . -type f \( -name "*.toml" -o -name "*.yml" -o -name "*.yaml" \
   -o -name "*.ts" -o -name "*.tsx" -o -name "*.md" -o -name "*.json" \
   -o -name "*.html" -o -name "*.css" \) \
   ! -path './.git/*' ! -path '*/node_modules/*' -print0 \
-  | xargs -0 perl -pi -e "s/__SERVICE_NAME__/${SERVICE_NAME}/g"
+  | xargs -0 perl -pi -e "s/__SERVICE_NAME__/${SERVICE_NAME}/g; s/__KV_NAMESPACE_ID__/${KV_NAMESPACE_ID}/g"
 
 # 2. Create per-service Cloudflare/Turso resources unless this is a CI smoke test
 if [[ "${SKIP_INFRA}" == "1" ]]; then

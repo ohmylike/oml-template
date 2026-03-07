@@ -39,10 +39,13 @@ pnpm dev:cli      # cli
 ## Deploy
 
 ```bash
+./scripts/sync-github-secrets.sh \
+  --turso-production-auth-token-ref 'op://ohmylike-prod/<service_name>-prod/turso/auth_token'
 pnpm deploy       # api + web to production
 ```
 
 Preview environments are automatically created on PR open and destroyed on PR close.
+Production deploy workflow also requires the GitHub repo secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `TURSO_API_TOKEN`, `TURSO_PREVIEW_AUTH_TOKEN`, and service-specific `TURSO_PRODUCTION_AUTH_TOKEN`.
 
 ## Observability
 

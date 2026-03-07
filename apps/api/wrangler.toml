@@ -31,9 +31,13 @@ head_sampling_rate = 1
 name = "oml-__SERVICE_NAME__-api"
 workers_dev = false
 
+[[env.production.kv_namespaces]]
+binding = "CACHE"
+id = "__KV_NAMESPACE_ID__"
+
 [[env.production.routes]]
-pattern = "api.__SERVICE_NAME__.ohmylike.app/*"
-zone_name = "ohmylike.app"
+pattern = "api.__SERVICE_NAME__.ohmylike.app"
+custom_domain = true
 
 [env.production.vars]
 ENVIRONMENT = "production"
