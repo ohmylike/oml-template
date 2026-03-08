@@ -1,7 +1,7 @@
 import { mkdtemp, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { tmpdir } from 'node:os'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { runCli } from '../../cli'
 import {
   createEmptyPostsDb,
@@ -12,6 +12,10 @@ import {
 } from '../../../../../test/cli-fixtures'
 
 describe('runCli integration', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('shows schema, export, and import in root help', async () => {
     const output = await runCli(['--help'])
 
@@ -21,9 +25,63 @@ describe('runCli integration', () => {
     expect(output).toContain('--api-url')
   })
 
-  it('fails clearly when API mode is selected before API routes exist', async () => {
-    await expect(runCli(['--api-url', 'https://preview.api.ohmylike.app', 'schema'])).rejects.toThrow(
-      'API transport for `schema` is not implemented yet. Remove `--api-url` or unset `API_BASE_URL` to use direct database mode.',
+  it('calls the preview API when API mode is selected', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          formatVersion: 1,
+          service: 'oml-__SERVICE_NAME__',
+          source: 'code',
+          tables: [{ name: 'posts', columns: [] }],
+        }),
+        {
+          status: 200,
+          headers: {
+            'content-type': 'application/json',
+          },
+        },
+      ),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const output = await runCli(['--api-url', 'https://preview.api.ohmylike.app', 'schema'])
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://preview.api.ohmylike.app/api/cli/schema?',
+      expect.objectContaining({
+        method: 'GET',
+      }),
+    )
+    expect(JSON.parse(output ?? '')).toEqual({
+      formatVersion: 1,
+      service: 'oml-__SERVICE_NAME__',
+      source: 'code',
+      tables: [{ name: 'posts', columns: [] }],
+    })
+  })
+
+  it('surfaces API error envelopes through the CLI', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          requestId: 'req_123',
+          error: {
+            code: 'auth_required',
+            message: 'Authentication required',
+          },
+        }),
+        {
+          status: 401,
+          headers: {
+            'content-type': 'application/json',
+          },
+        },
+      ),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(runCli(['schema', '--api-url', 'https://preview.api.ohmylike.app'])).rejects.toThrow(
+      'Authentication required',
     )
   })
 

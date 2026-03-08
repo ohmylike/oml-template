@@ -7,7 +7,7 @@
   "scripts": {
     "build": "pnpm -r build",
     "test": "vitest run",
-    "test:cli:unit": "pnpm --filter @oml-__SERVICE_NAME__/api-client build && vitest run --config vitest.config.cli.unit.ts",
+    "test:cli:unit": "pnpm --filter @oml-__SERVICE_NAME__/core build && pnpm --filter @oml-__SERVICE_NAME__/api-client build && vitest run --config vitest.config.cli.unit.ts",
     "test:cli:integration": "pnpm --filter @oml-__SERVICE_NAME__/core build && pnpm --filter @oml-__SERVICE_NAME__/api-client build && vitest run --config vitest.config.cli.integration.ts",
     "test:cli:e2e": "vitest run --config vitest.config.e2e.ts e2e/cli.test.ts",
     "test:watch": "vitest",

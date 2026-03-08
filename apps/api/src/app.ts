@@ -6,6 +6,7 @@ import { createApiCors } from './lib/cors'
 import { createErrorResponse, getErrorResponseDetails } from './lib/errors'
 import { createRequestLogger } from './lib/logging'
 import { getRequestId } from './lib/request-context'
+import cliRoutes from './routes/cli'
 import healthRoutes from './routes/health'
 
 export function createApp() {
@@ -42,6 +43,7 @@ export function createApp() {
   app.on(['GET', 'POST'], '/api/auth/*', handleAuthRequest)
 
   app.route('/api', healthRoutes)
+  app.route('/api/cli', cliRoutes)
 
   app.notFound((c) => {
     return createErrorResponse(c, 404, 'not_found', 'Route not found')

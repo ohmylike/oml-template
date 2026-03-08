@@ -1,2 +1,5 @@
 export * from './db/schema'
 export * from './db/client'
+export * from './schema-description'
+export * from './data-bundle'
+export * from './data-transfer'

@@ -7,8 +7,8 @@
     "oml-__SERVICE_NAME__": "./dist/index.js"
   },
   "scripts": {
-    "build": "pnpm --filter @oml-__SERVICE_NAME__/api-client build && tsdown",
-    "dev": "pnpm --filter @oml-__SERVICE_NAME__/api-client build && tsx src/index.ts"
+    "build": "pnpm --filter @oml-__SERVICE_NAME__/core build && pnpm --filter @oml-__SERVICE_NAME__/api-client build && tsdown",
+    "dev": "pnpm --filter @oml-__SERVICE_NAME__/core build && pnpm --filter @oml-__SERVICE_NAME__/api-client build && tsx src/index.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.17",

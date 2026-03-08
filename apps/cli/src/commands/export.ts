@@ -1,3 +1,4 @@
+import { requestApiExport } from '../api'
 import { resolveDbConnection } from '../db-connection'
 import { exportDatabase } from '../db'
 import { writeTextOutput } from '../io'
@@ -41,9 +42,10 @@ export const exportCommand = defineCliCommand({
       })
     }
 
-    assertDatabaseTransport('export', extensions.cliRuntime)
-
-    const bundle = await exportDatabase(resolveDbConnection(values))
+    const bundle =
+      extensions.cliRuntime.transport === 'api'
+        ? await requestApiExport(extensions.cliRuntime.apiClient)
+        : await exportDatabase(resolveDbConnection(values))
 
     if (await writeTextOutput(values.output, stringifyJson(bundle))) {
       return

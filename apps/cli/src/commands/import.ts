@@ -1,9 +1,10 @@
+import { requestApiImport } from '../api'
 import { parseBundle } from '../bundle'
 import { resolveDbConnection } from '../db-connection'
 import { importDatabase, summarizeBundle } from '../db'
 import { readTextInput } from '../io'
 import { stringifyJson } from '../json'
-import { assertDatabaseTransport, defineCliCommand } from '../runtime'
+import { defineCliCommand } from '../runtime'
 
 export const importCommand = defineCliCommand({
   name: 'import',
@@ -45,15 +46,16 @@ export const importCommand = defineCliCommand({
       })
     }
 
-    assertDatabaseTransport('import', extensions.cliRuntime)
-
-    const result = await importDatabase(bundleText, resolveDbConnection(values))
+    const result =
+      extensions.cliRuntime.transport === 'api'
+        ? await requestApiImport(extensions.cliRuntime.apiClient, bundleText)
+        : await importDatabase(bundleText, resolveDbConnection(values))
 
     return stringifyJson({
       command: 'import',
       dryRun: false,
       input: values.input ?? '-',
-      service: result.bundle.service,
+      service: 'bundle' in result ? result.bundle.service : result.service,
       tables: result.tables,
     })
   },

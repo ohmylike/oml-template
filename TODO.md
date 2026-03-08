@@ -1,16 +1,15 @@
 # TODO
 
 ## now
-> CLI のローカル検証雛形（Unit / Integration / E2E）は入った。
-> 次は `schema/export/import` を API route と CLI transport に繋ぎ込み、
-> ローカル DB 直結から API ベース検証へ段階的に寄せる。
+> CLI は `--api-url` / `API_BASE_URL` と API route 経由の `schema/export/import` まで通った。
+> 次はローカルで API を実際に起動し、CLI の API mode を本当の HTTP 越しに検証する。
 
 ## next
-- [ ] **CLI の `schema/export/import` に対応する API route を実装する** (2026-03-08)
-  > 現在の `apps/api` は `/api/health` のみ。CLI には `--api-url` /
-  > `API_BASE_URL` と transport 判定の土台が入ったので、次は
-  > `packages/core` の既存ロジックを再利用しながら、CLI が叩ける route を
-  > 追加する。認証・レスポンス形式・エラー形式も CLI から扱いやすく揃える。
+- [ ] **CLI Integration Test をローカル API 起動ベースに拡張する** (2026-03-08)
+  > 現状の CLI integration は temp libsql DB と fetch モックまでは確認できるが、
+  > 実 HTTP で `apps/api` を起動して API mode の contract を検証していない。
+  > テスト中にローカルサーバを立ち上げ、`API_BASE_URL=http://localhost:...` または
+  > `--api-url` を使って `schema/export/import` を実行し、route と CLI の結合を確認する。
 
 ## backlog
 - [ ] **CLI Unit Test を command 単位へ拡張する** (2026-03-07)
@@ -18,12 +17,6 @@
   > command の引数パース・出力フォーマット・エラーハンドリングは未検証。
   > API transport / DB transport を差し替えられる形にして、モックベースの
   > command test を追加する。
-
-- [ ] **CLI Integration Test をローカル API 起動ベースに拡張する** (2026-03-07)
-  > 現状の `apps/cli/src/__tests__/integration/cli.integration.test.ts` は
-  > temp libsql DB を使ったローカル統合テスト。これに加えて
-  > `apps/api` をローカル起動し、`API_BASE_URL=http://localhost:...` で
-  > CLI から実際に API を叩く統合テストを追加する。
 
 - [ ] **CLI E2E Test をプレビュー環境対向の CI ワークフローに拡張する** (2026-03-07)
   > 現状の `e2e/cli.test.ts` と `.github/workflows/test-template.yml` は
@@ -59,6 +52,7 @@
 - AIが既存コードの古いパターンに引っ張られる問題：「止めるぞ」と明示的に宣言するルールをCLAUDE.mdやADRに入れる (2026-03-07)
 
 ## done
+- [x] **CLI の `schema/export/import` に対応する API route と API transport を実装した** (2026-03-08 -> 2026-03-08)
 - [x] **CLI の接続戦略を整理し、API 接続設定（`--api-url` / `API_BASE_URL`）を導入した** (2026-03-08 -> 2026-03-08)
 - [x] **CLI の Unit / Integration テスト雛形を追加した** (2026-03-07 -> 2026-03-08)
 - [x] **ビルド済み CLI のローカル E2E smoke と `test-template` ワークフローを追加した** (2026-03-07 -> 2026-03-08)

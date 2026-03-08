@@ -1,7 +1,8 @@
+import { requestApiSchema } from '../api'
 import { resolveDbConnection } from '../db-connection'
 import { describeDatabaseSchema, describeSchema } from '../db-schema'
 import { stringifyJson } from '../json'
-import { assertDatabaseTransport, defineCliCommand } from '../runtime'
+import { defineCliCommand } from '../runtime'
 
 const SERVICE_NAME = 'oml-__SERVICE_NAME__'
 
@@ -25,16 +26,16 @@ export const schemaCommand = defineCliCommand({
     },
   },
   run: async ({ values, extensions }) => {
-    assertDatabaseTransport('schema', extensions.cliRuntime)
-
     const description =
-      values.source === 'database'
-        ? await describeDatabaseSchema(resolveDbConnection(values))
-        : describeSchema()
+      extensions.cliRuntime.transport === 'api'
+        ? await requestApiSchema(extensions.cliRuntime.apiClient, values.source)
+        : values.source === 'database'
+          ? await describeDatabaseSchema(resolveDbConnection(values))
+          : describeSchema()
 
     return stringifyJson({
-      formatVersion: 1,
-      service: SERVICE_NAME,
+      formatVersion: 'formatVersion' in description ? description.formatVersion : 1,
+      service: 'service' in description ? description.service : SERVICE_NAME,
       source: description.source,
       tables: description.tables,
     })
