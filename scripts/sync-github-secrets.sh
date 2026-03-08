@@ -7,11 +7,13 @@ Sync GitHub Actions secrets from 1Password into the current repo.
 
 Usage:
   ./scripts/sync-github-secrets.sh \
-    --turso-production-auth-token-ref 'op://ohmylike-prod/<service_name>-prod/turso/auth_token'
+    --turso-production-auth-token-ref 'op://ohmylike-prod/<service_name>-prod/turso/auth_token' \
+    --enable-production-deploy
 
 Options:
   --repo <owner/name>                     Override the target GitHub repo.
   --turso-production-auth-token-ref <ref> Required 1Password secret reference for the per-service production DB auth token.
+  --enable-production-deploy              Set OML_ENABLE_PRODUCTION_DEPLOY=1 after secrets sync.
   --dry-run                               Print the refs that would be synced without writing secrets.
   -h, --help                              Show this help.
 
@@ -26,6 +28,7 @@ EOF
 REPO=""
 DRY_RUN=false
 TURSO_PRODUCTION_AUTH_TOKEN_REF=""
+ENABLE_PRODUCTION_DEPLOY=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -36,6 +39,10 @@ while [[ $# -gt 0 ]]; do
     --turso-production-auth-token-ref)
       TURSO_PRODUCTION_AUTH_TOKEN_REF="${2:?missing value for --turso-production-auth-token-ref}"
       shift 2
+      ;;
+    --enable-production-deploy)
+      ENABLE_PRODUCTION_DEPLOY=true
+      shift
       ;;
     --dry-run)
       DRY_RUN=true
@@ -110,6 +117,15 @@ sync_secret "CLOUDFLARE_ACCOUNT_ID" "$OP_CLOUDFLARE_ACCOUNT_ID_REF"
 sync_secret "TURSO_API_TOKEN" "$OP_TURSO_API_TOKEN_REF"
 sync_secret "TURSO_PREVIEW_AUTH_TOKEN" "$OP_TURSO_PREVIEW_AUTH_TOKEN_REF"
 sync_secret "TURSO_PRODUCTION_AUTH_TOKEN" "$TURSO_PRODUCTION_AUTH_TOKEN_REF"
+
+if $ENABLE_PRODUCTION_DEPLOY; then
+  if $DRY_RUN; then
+    echo "[dry-run] OML_ENABLE_PRODUCTION_DEPLOY <= 1"
+  else
+    echo "Setting OML_ENABLE_PRODUCTION_DEPLOY=1 on ${REPO}"
+    gh variable set OML_ENABLE_PRODUCTION_DEPLOY --repo "$REPO" --body "1"
+  fi
+fi
 
 if ! $DRY_RUN; then
   echo "Done. GitHub Actions secrets are synced for ${REPO}."

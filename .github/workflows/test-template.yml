@@ -11,6 +11,7 @@ permissions:
 
 jobs:
   bootstrap-smoke:
+    if: github.repository == 'ohmylike/oml-template'
     runs-on: ubuntu-latest
     env:
       SERVICE_NAME: template-smoke

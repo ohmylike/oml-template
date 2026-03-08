@@ -20,7 +20,7 @@ permissions:
 
 jobs:
   deploy:
-    if: github.repository != 'ohmylike/oml-template'
+    if: github.repository != 'ohmylike/oml-template' && vars.OML_ENABLE_PRODUCTION_DEPLOY == '1'
     uses: ohmylike/oml-workflows/.github/workflows/production-deploy.yml@main
     with:
       service_name: __SERVICE_NAME__

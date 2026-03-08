@@ -6,9 +6,15 @@ Monorepo for the __SERVICE_NAME__ service on ohmylike.app.
 
 This repository was created from [oml-template](https://github.com/ohmylike/oml-template).
 
-Run `./bootstrap.sh __SERVICE_NAME__` to initialize, then:
+Create the GitHub repo without `--push`, run `./bootstrap.sh __SERVICE_NAME__`, sync secrets,
+enable production deploy, then push:
 
 ```bash
+gh repo create ohmylike/oml-__SERVICE_NAME__ --private --source=. --remote=origin
+./bootstrap.sh __SERVICE_NAME__
+./scripts/sync-github-secrets.sh \
+  --turso-production-auth-token-ref 'op://ohmylike-prod/<service_name>-prod/turso/auth_token' \
+  --enable-production-deploy
 git add -A && git commit -m "bootstrap: initialize oml-__SERVICE_NAME__" && git push
 ```
 
@@ -40,12 +46,14 @@ pnpm dev:cli      # cli
 
 ```bash
 ./scripts/sync-github-secrets.sh \
-  --turso-production-auth-token-ref 'op://ohmylike-prod/<service_name>-prod/turso/auth_token'
+  --turso-production-auth-token-ref 'op://ohmylike-prod/<service_name>-prod/turso/auth_token' \
+  --enable-production-deploy
 pnpm deploy       # api + web to production
 ```
 
 Preview environments are automatically created on PR open and destroyed on PR close.
 Production deploy workflow also requires the GitHub repo secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `TURSO_API_TOKEN`, `TURSO_PREVIEW_AUTH_TOKEN`, and service-specific `TURSO_PRODUCTION_AUTH_TOKEN`.
+It is gated by repo variable `OML_ENABLE_PRODUCTION_DEPLOY=1`, which the sync script can set for you.
 
 ## Observability
 
