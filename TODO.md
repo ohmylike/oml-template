@@ -1,8 +1,8 @@
 # TODO
 
 ## now
-> CLI E2E は local DB smoke に加えて preview API URL 注入でも走るようになり、
-> preview deploy 後の CI smoke までつながった。次は bootstrap の feature 選択を作る。
+> 新サービス bootstrap の proven path を README / bootstrap / workflow caller に反映できた。
+> 次は bootstrap 自体に feature 選択の入口を追加する。
 
 ## next
 - [ ] **bootstrap.sh に機能選択の仕組み（フラグ解析 + 対話プロンプト）を追加する** (2026-03-07)
@@ -34,6 +34,7 @@
 - AIが既存コードの古いパターンに引っ張られる問題：「止めるぞ」と明示的に宣言するルールをCLAUDE.mdやADRに入れる (2026-03-07)
 
 ## done
+- [x] **新サービス bootstrap hardening を `oml-catalogs` の事故ベースで反映した** (2026-03-08 -> 2026-03-08)
 - [x] **CLI E2E Test をプレビュー環境対向の CI ワークフローに拡張する** (2026-03-07 -> 2026-03-08)
 - [x] **CLI Unit Test を command 単位へ拡張する** (2026-03-08 -> 2026-03-08)
 - [x] **CLI Integration Test をローカル API 起動ベースに拡張した** (2026-03-08 -> 2026-03-08)

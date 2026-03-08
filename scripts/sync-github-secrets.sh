@@ -94,6 +94,11 @@ if ! $DRY_RUN && ! op whoami >/dev/null 2>&1; then
   exit 2
 fi
 
+if ! $DRY_RUN && ! gh repo view "$REPO" >/dev/null 2>&1; then
+  echo "Error: GitHub repo '${REPO}' does not exist or is not accessible." >&2
+  exit 2
+fi
+
 OP_CLOUDFLARE_API_TOKEN_REF="${OP_CLOUDFLARE_API_TOKEN_REF:-op://ohmylike-prod/cloudflare/api_token}"
 OP_CLOUDFLARE_ACCOUNT_ID_REF="${OP_CLOUDFLARE_ACCOUNT_ID_REF:-op://ohmylike-prod/cloudflare/account_id}"
 OP_TURSO_API_TOKEN_REF="${OP_TURSO_API_TOKEN_REF:-op://ohmylike-prod/turso/api_token}"

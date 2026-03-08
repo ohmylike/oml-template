@@ -23,6 +23,9 @@ jobs:
           node-version: "25"
           cache: "pnpm"
 
+      - name: Bootstrap infra smoke with mocked CLIs
+        run: bash ./test/bootstrap-infra-smoke.sh
+
       - name: Bootstrap generated repository
         run: |
           set -euo pipefail
