@@ -1,23 +1,17 @@
 # TODO
 
 ## now
-> CLI は `--api-url` / `API_BASE_URL`、API route、ローカル HTTP integration まで通った。
-> 次は command 単位の unit test を増やして、引数解決と出力 contract を小さく固定する。
+> CLI は `schema/export/import` command 単位の unit test まで入り、
+> API mode / DB mode の contract を固定できた。次は preview deploy 後の E2E を CI に載せる。
 
 ## next
-- [ ] **CLI Unit Test を command 単位へ拡張する** (2026-03-08)
-  > 現状の Unit Test は bundle と runtime の基礎だけで、
-  > `schema/export/import` command 自体の引数パース・出力フォーマット・
-  > エラーハンドリングは薄い。DB mode / API mode の両方で transport を差し替え、
-  > command ごとの contract をモックベースで固定する。
-
-## backlog
 - [ ] **CLI E2E Test をプレビュー環境対向の CI ワークフローに拡張する** (2026-03-07)
   > 現状の `e2e/cli.test.ts` と `.github/workflows/test-template.yml` は
   > ビルド済み CLI をローカルで検証する smoke に留まる。
   > PR ごとの preview deploy 完了後に、プレビュー API URL を注入して
   > CLI E2E を走らせるワークフローへ発展させる。
 
+## backlog
 - [ ] **bootstrap.sh に機能選択の仕組み（フラグ解析 + 対話プロンプト）を追加する** (2026-03-07)
   > 現状の `bootstrap.sh` は `<service_name>` の受け取りとプレースホルダ置換、
   > インフラ作成のみ。ここに `--features auth,tracking` のようなフラグ指定、
@@ -46,6 +40,7 @@
 - AIが既存コードの古いパターンに引っ張られる問題：「止めるぞ」と明示的に宣言するルールをCLAUDE.mdやADRに入れる (2026-03-07)
 
 ## done
+- [x] **CLI Unit Test を command 単位へ拡張する** (2026-03-08 -> 2026-03-08)
 - [x] **CLI Integration Test をローカル API 起動ベースに拡張した** (2026-03-08 -> 2026-03-08)
 - [x] **CLI の `schema/export/import` に対応する API route と API transport を実装した** (2026-03-08 -> 2026-03-08)
 - [x] **CLI の接続戦略を整理し、API 接続設定（`--api-url` / `API_BASE_URL`）を導入した** (2026-03-08 -> 2026-03-08)
