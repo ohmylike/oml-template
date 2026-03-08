@@ -18,6 +18,20 @@ gh repo create ohmylike/oml-__SERVICE_NAME__ --private --source=. --remote=origi
 git add -A && git commit -m "bootstrap: initialize oml-__SERVICE_NAME__" && git push
 ```
 
+If the GitHub organization is on the Free plan and organization secrets are not available for the new private repo,
+run the shared repo secret sync explicitly before the first push:
+
+```bash
+REPO=ohmylike/oml-__SERVICE_NAME__
+op read 'op://ohmylike-prod/cloudflare/api_token' | gh secret set CLOUDFLARE_API_TOKEN --repo "$REPO"
+op read 'op://ohmylike-prod/cloudflare/account_id' | gh secret set CLOUDFLARE_ACCOUNT_ID --repo "$REPO"
+op read 'op://ohmylike-prod/turso/api_token' | gh secret set TURSO_API_TOKEN --repo "$REPO"
+op read 'op://ohmylike-prod/turso/preview_auth_token' | gh secret set TURSO_PREVIEW_AUTH_TOKEN --repo "$REPO"
+```
+
+`TURSO_PRODUCTION_AUTH_TOKEN` is still required per service, so keep using
+`./scripts/sync-github-secrets.sh --turso-production-auth-token-ref ...` or set that secret separately.
+
 ## Structure
 
 ```
@@ -54,6 +68,7 @@ pnpm deploy       # api + web to production
 Preview environments are automatically created on PR open and destroyed on PR close.
 Production deploy workflow also requires the GitHub repo secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `TURSO_API_TOKEN`, `TURSO_PREVIEW_AUTH_TOKEN`, and service-specific `TURSO_PRODUCTION_AUTH_TOKEN`.
 It is gated by repo variable `OML_ENABLE_PRODUCTION_DEPLOY=1`, which the sync script can set for you.
+If the GitHub org is on the Free plan, treat repo-level secret sync as mandatory before the first push.
 
 ## Observability
 
