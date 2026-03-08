@@ -1,10 +1,10 @@
-import { define } from 'gunshi'
 import { resolveDbConnection } from '../db-connection'
 import { exportDatabase } from '../db'
 import { writeTextOutput } from '../io'
 import { stringifyJson } from '../json'
+import { assertDatabaseTransport, defineCliCommand } from '../runtime'
 
-export const exportCommand = define({
+export const exportCommand = defineCliCommand({
   name: 'export',
   description: 'Export data as a JSON bundle',
   toKebab: true,
@@ -28,7 +28,7 @@ export const exportCommand = define({
       description: 'Print the export plan without touching the database.',
     },
   },
-  run: async ({ values }) => {
+  run: async ({ values, extensions }) => {
     if (values.dryRun) {
       return stringifyJson({
         command: 'export',
@@ -40,6 +40,8 @@ export const exportCommand = define({
         nextStep: 'Remove --dry-run after export execution is implemented.',
       })
     }
+
+    assertDatabaseTransport('export', extensions.cliRuntime)
 
     const bundle = await exportDatabase(resolveDbConnection(values))
 

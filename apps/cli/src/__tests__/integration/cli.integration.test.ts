@@ -18,6 +18,13 @@ describe('runCli integration', () => {
     expect(output).toContain('schema')
     expect(output).toContain('export')
     expect(output).toContain('import')
+    expect(output).toContain('--api-url')
+  })
+
+  it('fails clearly when API mode is selected before API routes exist', async () => {
+    await expect(runCli(['--api-url', 'https://preview.api.ohmylike.app', 'schema'])).rejects.toThrow(
+      'API transport for `schema` is not implemented yet. Remove `--api-url` or unset `API_BASE_URL` to use direct database mode.',
+    )
   })
 
   it('can introspect code and live database schemas separately', async () => {

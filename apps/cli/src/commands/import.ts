@@ -1,11 +1,11 @@
-import { define } from 'gunshi'
 import { parseBundle } from '../bundle'
 import { resolveDbConnection } from '../db-connection'
 import { importDatabase, summarizeBundle } from '../db'
 import { readTextInput } from '../io'
 import { stringifyJson } from '../json'
+import { assertDatabaseTransport, defineCliCommand } from '../runtime'
 
-export const importCommand = define({
+export const importCommand = defineCliCommand({
   name: 'import',
   description: 'Import data from a JSON bundle',
   toKebab: true,
@@ -29,7 +29,7 @@ export const importCommand = define({
       description: 'Print the import plan without writing to the database.',
     },
   },
-  run: async ({ values }) => {
+  run: async ({ values, extensions }) => {
     const bundleText = await readTextInput(values.input)
 
     if (values.dryRun) {
@@ -44,6 +44,8 @@ export const importCommand = define({
         tables: summarizeBundle(bundle),
       })
     }
+
+    assertDatabaseTransport('import', extensions.cliRuntime)
 
     const result = await importDatabase(bundleText, resolveDbConnection(values))
 

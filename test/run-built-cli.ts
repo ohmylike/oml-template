@@ -14,6 +14,12 @@ async function ensureBuilt(force = false) {
     return
   }
 
+  await execFileAsync('pnpm', ['--filter', '@oml-__SERVICE_NAME__/api-client', 'build'], {
+    cwd: repoRoot,
+    env: process.env,
+    maxBuffer: 10 * 1024 * 1024,
+  })
+
   await execFileAsync('pnpm', ['--filter', '@oml-__SERVICE_NAME__/core', 'build'], {
     cwd: repoRoot,
     env: process.env,

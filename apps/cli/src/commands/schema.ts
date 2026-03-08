@@ -1,11 +1,11 @@
-import { define } from 'gunshi'
 import { resolveDbConnection } from '../db-connection'
 import { describeDatabaseSchema, describeSchema } from '../db-schema'
 import { stringifyJson } from '../json'
+import { assertDatabaseTransport, defineCliCommand } from '../runtime'
 
 const SERVICE_NAME = 'oml-__SERVICE_NAME__'
 
-export const schemaCommand = define({
+export const schemaCommand = defineCliCommand({
   name: 'schema',
   description: 'Print the current schema as JSON',
   toKebab: true,
@@ -24,7 +24,9 @@ export const schemaCommand = define({
       description: 'Database auth token. Defaults to TURSO_AUTH_TOKEN.',
     },
   },
-  run: async ({ values }) => {
+  run: async ({ values, extensions }) => {
+    assertDatabaseTransport('schema', extensions.cliRuntime)
+
     const description =
       values.source === 'database'
         ? await describeDatabaseSchema(resolveDbConnection(values))

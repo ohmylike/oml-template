@@ -1,66 +1,64 @@
 # TODO
 
 ## now
-> CLI の検証基盤を整備する。API/web はプレビュー環境にデプロイされる前提で、CLI も3層（Unit / Integration / E2E）で検証できる構成にする。
+> CLI のローカル検証雛形（Unit / Integration / E2E）は入った。
+> 次は `schema/export/import` を API route と CLI transport に繋ぎ込み、
+> ローカル DB 直結から API ベース検証へ段階的に寄せる。
 
 ## next
-- [ ] **CLI に `--api-url` フラグと環境変数 `API_BASE_URL` での接続先切り替えを実装する** (2026-03-07)
-  > CLI 検証戦略の前提となる baseUrl 外部注入の仕組み。
-  > `apps/cli/src/index.ts` で gunshi の args 定義に `apiUrl` を追加し、
-  > `args.apiUrl ?? process.env.API_BASE_URL ?? デフォルトURL` の優先順位で解決する。
-  > `createApiClient({ baseUrl })` に渡す。これが後続のテスト全レイヤーの基盤になる。
+- [ ] **CLI の `schema/export/import` に対応する API route を実装する** (2026-03-08)
+  > 現在の `apps/api` は `/api/health` のみ。CLI には `--api-url` /
+  > `API_BASE_URL` と transport 判定の土台が入ったので、次は
+  > `packages/core` の既存ロジックを再利用しながら、CLI が叩ける route を
+  > 追加する。認証・レスポンス形式・エラー形式も CLI から扱いやすく揃える。
 
 ## backlog
-- [ ] **CLI Unit Test のセットアップ（モックAPI）** (2026-03-07)
-  > コマンドロジックの単体テスト基盤。API クライアントをモックして、
-  > 引数パース・出力フォーマット・エラーハンドリングを検証する。
-  > `apps/cli/src/commands/__command__.test.ts` のパターンで配置。
-  > vitest の既存設定（`vitest.config.ts`）でそのまま拾われる。
+- [ ] **CLI Unit Test を command 単位へ拡張する** (2026-03-07)
+  > 現状の Unit Test は `apps/cli/src/__tests__/unit/bundle.unit.test.ts` のみで、
+  > command の引数パース・出力フォーマット・エラーハンドリングは未検証。
+  > API transport / DB transport を差し替えられる形にして、モックベースの
+  > command test を追加する。
 
-- [ ] **CLI Integration Test のセットアップ（ローカルAPI起動）** (2026-03-07)
-  > ローカルで `apps/api` を起動し、CLI から実際にリクエストを投げるテスト。
-  > vitest の `globalSetup` で wrangler dev or miniflare を起動、
-  > `API_BASE_URL=http://localhost:8787` で CLI を実行。
-  > `apps/cli/src/__tests__/integration/` に配置。DB はテスト用 Turso インスタンス。
+- [ ] **CLI Integration Test をローカル API 起動ベースに拡張する** (2026-03-07)
+  > 現状の `apps/cli/src/__tests__/integration/cli.integration.test.ts` は
+  > temp libsql DB を使ったローカル統合テスト。これに加えて
+  > `apps/api` をローカル起動し、`API_BASE_URL=http://localhost:...` で
+  > CLI から実際に API を叩く統合テストを追加する。
 
-- [ ] **CLI E2E Test（プレビュー環境対向）の CI ワークフロー作成** (2026-03-07)
-  > PR 作成時にプレビューデプロイ後、ビルド済み CLI (`dist/index.js`) を
-  > プレビュー API (`pr-{N}.api.__SERVICE_NAME__.ohmylike.app`) に向けて実行。
-  > GitHub Actions で `deploy-preview` → `cli-e2e` の依存ジョブ構成。
-  > `API_BASE_URL` をプレビュー URL から注入する。
+- [ ] **CLI E2E Test をプレビュー環境対向の CI ワークフローに拡張する** (2026-03-07)
+  > 現状の `e2e/cli.test.ts` と `.github/workflows/test-template.yml` は
+  > ビルド済み CLI をローカルで検証する smoke に留まる。
+  > PR ごとの preview deploy 完了後に、プレビュー API URL を注入して
+  > CLI E2E を走らせるワークフローへ発展させる。
 
-## backlog (bootstrap feature selection)
 - [ ] **bootstrap.sh に機能選択の仕組み（フラグ解析 + 対話プロンプト）を追加する** (2026-03-07)
-  > bootstrap.sh を拡張して `--features auth,tracking` のようなフラグ指定、
-  > またはフラグ未指定時に対話的に選択できる仕組みを入れる。
-  > 選択結果を変数に格納し、後続の処理で分岐させる土台を作る。
-  > まずはフラグ解析と選択UIだけ。実際のテンプレ適用は後続タスク。
+  > 現状の `bootstrap.sh` は `<service_name>` の受け取りとプレースホルダ置換、
+  > インフラ作成のみ。ここに `--features auth,tracking` のようなフラグ指定、
+  > またはフラグ未指定時の対話選択 UI を追加し、選択結果を後続処理で
+  > 参照できるようにする。まずはフラグ解析と選択 UI まで。
 
 - [ ] **apps/web の toB / toC テンプレートバリアントを作成する** (2026-03-07)
-  > 現在の `apps/web` をベースに2つのバリアントを用意する。
+  > 現在の `apps/web` をベースに 2 つのバリアントを用意する。
   > - `apps/web-b2b/`: ダッシュボード系（サイドバーレイアウト、テーブル、フォーム中心）
   > - `apps/web-b2c/`: ユーザー向け（LP風ヒーロー、カード型一覧、プロフィール）
-  > bootstrap.sh の feature 選択で `--web b2b` or `--web b2c` で切り替え。
-  > 選択されなかった方のディレクトリを削除し、選択された方を `apps/web` にリネーム。
+  > bootstrap の feature 選択で `--web b2b` or `--web b2c` で切り替え、
+  > 未選択側を削除して選択側を `apps/web` にリネームする。
 
 - [ ] **packages/auth テンプレートを作成し、bootstrap で選択注入する** (2026-03-07)
-  > `packages/auth/` を新規作成。JWT トークン検証、セッション管理の雛形。
-  > `--features auth` で選択されたら:
-  > 1. `packages/auth/` を残す（未選択なら削除）
-  > 2. `apps/api` にミドルウェア登録コードを注入
-  > 3. `apps/web` にログインページの雛形を追加
-  > 4. `pnpm-workspace.yaml` と `package.json` の依存を調整
+  > `packages/auth/` を新規作成し、JWT トークン検証とセッション管理の雛形を持たせる。
+  > `--features auth` 選択時だけ残し、`apps/api` のミドルウェア登録、
+  > `apps/web` のログイン画面雛形、workspace 依存関係の調整まで含めて注入する。
 
 - [ ] **トラッキングタグの feature テンプレートを作成する** (2026-03-07)
-  > `--features tracking` で選択されたら:
-  > 1. `apps/web` の `index.html` に GTM/GA スニペットの雛形を挿入
-  > 2. `apps/www` にも同様に挿入
-  > 3. 環境変数 `TRACKING_ID` のプレースホルダーを配置
-  > 4. wrangler.toml の vars に `TRACKING_ID` を追加
-  > 未選択ならこれらのスニペットやプレースホルダーを除去する。
+  > `--features tracking` 選択時だけ `apps/web` / `apps/www` に
+  > GTM/GA スニペット雛形と `TRACKING_ID` プレースホルダーを入れる。
+  > あわせて設定ファイル側の変数定義も整え、未選択時は痕跡を残さない。
 
 ## inbox
 - 仕様ドキュメントを全部書くのはやめて、意思決定ADR（Architecture Decision Record）だけ軽量に残す運用にする (2026-03-07)
 - AIが既存コードの古いパターンに引っ張られる問題：「止めるぞ」と明示的に宣言するルールをCLAUDE.mdやADRに入れる (2026-03-07)
 
 ## done
+- [x] **CLI の接続戦略を整理し、API 接続設定（`--api-url` / `API_BASE_URL`）を導入した** (2026-03-08 -> 2026-03-08)
+- [x] **CLI の Unit / Integration テスト雛形を追加した** (2026-03-07 -> 2026-03-08)
+- [x] **ビルド済み CLI のローカル E2E smoke と `test-template` ワークフローを追加した** (2026-03-07 -> 2026-03-08)
