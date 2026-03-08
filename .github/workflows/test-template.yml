@@ -27,7 +27,23 @@ jobs:
         run: |
           set -euo pipefail
           tmpdir="$(mktemp -d)"
-          trap 'rm -rf "$tmpdir"' EXIT
+          url_file=''
+          server_pid=''
+
+          cleanup() {
+            if [ -n "$server_pid" ]; then
+              kill "$server_pid" 2>/dev/null || true
+              wait "$server_pid" 2>/dev/null || true
+            fi
+
+            if [ -n "$url_file" ]; then
+              rm -f "$url_file"
+            fi
+
+            rm -rf "$tmpdir"
+          }
+
+          trap cleanup EXIT
 
           git archive --format=tar HEAD | tar -xf - -C "$tmpdir"
           cd "$tmpdir"
@@ -47,4 +63,20 @@ jobs:
           pnpm install --frozen-lockfile
           pnpm build
           pnpm test
-          pnpm test:cli:e2e
+          url_file="$(mktemp)"
+          CLI_E2E_SERVICE_NAME="$SERVICE_NAME" pnpm exec tsx test/start-local-api-server.ts > "$url_file" &
+          server_pid=$!
+
+          for _ in $(seq 1 30); do
+            if [ -s "$url_file" ]; then
+              break
+            fi
+            sleep 1
+          done
+
+          if [ ! -s "$url_file" ]; then
+            echo "Local API server did not report a base URL"
+            exit 1
+          fi
+
+          CLI_E2E_API_URL="$(cat "$url_file")" CLI_E2E_SERVICE_NAME="$SERVICE_NAME" pnpm test:cli:e2e

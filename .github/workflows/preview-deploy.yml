@@ -38,3 +38,40 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       TURSO_API_TOKEN: ${{ secrets.TURSO_API_TOKEN }}
       TURSO_PREVIEW_AUTH_TOKEN: ${{ secrets.TURSO_PREVIEW_AUTH_TOKEN }}
+
+  cli-e2e-preview:
+    if: github.repository != 'ohmylike/oml-template' && github.event.action != 'closed' && (github.event_name != 'workflow_dispatch' || inputs.action != 'cleanup')
+    needs: preview
+    runs-on: ubuntu-latest
+    env:
+      CLI_E2E_API_URL: https://pr-${{ github.event.pull_request.number || inputs.pr_number }}-api.__SERVICE_NAME__.ohmylike.app
+      CLI_E2E_SERVICE_NAME: __SERVICE_NAME__
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "25"
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Wait for preview API health
+        run: |
+          set -euo pipefail
+
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --show-error "$CLI_E2E_API_URL/api/health" > /tmp/cli-e2e-health.json; then
+              cat /tmp/cli-e2e-health.json
+              exit 0
+            fi
+
+            echo "Waiting for preview API ($attempt/30): $CLI_E2E_API_URL"
+            sleep 10
+          done
+
+          echo "::error::Preview API did not become healthy at $CLI_E2E_API_URL/api/health"
+          exit 1
+
+      - name: Run CLI E2E against preview API
+        run: pnpm test:cli:e2e

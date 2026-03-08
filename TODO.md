@@ -1,23 +1,17 @@
 # TODO
 
 ## now
-> CLI は `schema/export/import` command 単位の unit test まで入り、
-> API mode / DB mode の contract を固定できた。次は preview deploy 後の E2E を CI に載せる。
+> CLI E2E は local DB smoke に加えて preview API URL 注入でも走るようになり、
+> preview deploy 後の CI smoke までつながった。次は bootstrap の feature 選択を作る。
 
 ## next
-- [ ] **CLI E2E Test をプレビュー環境対向の CI ワークフローに拡張する** (2026-03-07)
-  > 現状の `e2e/cli.test.ts` と `.github/workflows/test-template.yml` は
-  > ビルド済み CLI をローカルで検証する smoke に留まる。
-  > PR ごとの preview deploy 完了後に、プレビュー API URL を注入して
-  > CLI E2E を走らせるワークフローへ発展させる。
-
-## backlog
 - [ ] **bootstrap.sh に機能選択の仕組み（フラグ解析 + 対話プロンプト）を追加する** (2026-03-07)
   > 現状の `bootstrap.sh` は `<service_name>` の受け取りとプレースホルダ置換、
   > インフラ作成のみ。ここに `--features auth,tracking` のようなフラグ指定、
   > またはフラグ未指定時の対話選択 UI を追加し、選択結果を後続処理で
   > 参照できるようにする。まずはフラグ解析と選択 UI まで。
 
+## backlog
 - [ ] **apps/web の toB / toC テンプレートバリアントを作成する** (2026-03-07)
   > 現在の `apps/web` をベースに 2 つのバリアントを用意する。
   > - `apps/web-b2b/`: ダッシュボード系（サイドバーレイアウト、テーブル、フォーム中心）
@@ -40,6 +34,7 @@
 - AIが既存コードの古いパターンに引っ張られる問題：「止めるぞ」と明示的に宣言するルールをCLAUDE.mdやADRに入れる (2026-03-07)
 
 ## done
+- [x] **CLI E2E Test をプレビュー環境対向の CI ワークフローに拡張する** (2026-03-07 -> 2026-03-08)
 - [x] **CLI Unit Test を command 単位へ拡張する** (2026-03-08 -> 2026-03-08)
 - [x] **CLI Integration Test をローカル API 起動ベースに拡張した** (2026-03-08 -> 2026-03-08)
 - [x] **CLI の `schema/export/import` に対応する API route と API transport を実装した** (2026-03-08 -> 2026-03-08)
