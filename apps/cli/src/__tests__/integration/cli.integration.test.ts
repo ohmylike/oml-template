@@ -10,10 +10,15 @@ import {
   setupDivergedDb,
   setupPostsDb,
 } from '../../../../../test/cli-fixtures'
+import { startLocalApiServer, type LocalApiServer } from '../../../../../test/local-api-server'
 
 describe('runCli integration', () => {
+  const servers: LocalApiServer[] = []
+
   afterEach(() => {
     vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+    return Promise.all(servers.splice(0).map((server) => server.close()))
   })
 
   it('shows schema, export, and import in root help', async () => {
@@ -83,6 +88,97 @@ describe('runCli integration', () => {
     await expect(runCli(['schema', '--api-url', 'https://preview.api.ohmylike.app'])).rejects.toThrow(
       'Authentication required',
     )
+  })
+
+  it('can introspect a live database schema through a local API server', async () => {
+    vi.spyOn(console, 'info').mockImplementation(() => {})
+
+    const db = await createTempDb()
+    await setupDivergedDb(db.url)
+
+    const server = await startLocalApiServer({
+      TURSO_DATABASE_URL: db.url,
+    })
+    servers.push(server)
+
+    const output = await runCli([
+      'schema',
+      '--source',
+      'database',
+      '--api-url',
+      server.baseUrl,
+    ])
+    const schema = JSON.parse(output ?? '')
+
+    expect(schema).toMatchObject({
+      service: '__SERVICE_NAME__',
+      source: 'database',
+      tables: expect.arrayContaining([
+        expect.objectContaining({ name: 'drafts' }),
+        expect.objectContaining({
+          name: 'posts',
+          columns: expect.arrayContaining([expect.objectContaining({ name: 'published_at' })]),
+        }),
+      ]),
+    })
+  })
+
+  it('round-trips export and import through local API servers over HTTP', async () => {
+    vi.spyOn(console, 'info').mockImplementation(() => {})
+
+    const sourceDb = await createTempDb()
+    await setupPostsDb(sourceDb.url)
+    const sourceServer = await startLocalApiServer({
+      TURSO_DATABASE_URL: sourceDb.url,
+    })
+    servers.push(sourceServer)
+
+    const bundleDir = await mkdtemp(path.join(tmpdir(), 'oml-__SERVICE_NAME__-http-bundle-'))
+    const bundlePath = path.join(bundleDir, 'bundle.json')
+
+    const exportOutput = await runCli([
+      'export',
+      '--api-url',
+      sourceServer.baseUrl,
+      '--output',
+      bundlePath,
+    ])
+
+    expect(exportOutput).toBeUndefined()
+
+    const writtenBundle = JSON.parse(await readFile(bundlePath, 'utf8'))
+    expect(writtenBundle.data.posts).toHaveLength(1)
+
+    const targetDb = await createTempDb()
+    await createEmptyPostsDb(targetDb.url)
+    const targetServer = await startLocalApiServer({
+      TURSO_DATABASE_URL: targetDb.url,
+    })
+    servers.push(targetServer)
+
+    const importOutput = await runCli([
+      'import',
+      '--api-url',
+      targetServer.baseUrl,
+      '--input',
+      bundlePath,
+    ])
+    const importSummary = JSON.parse(importOutput ?? '')
+
+    expect(importSummary).toEqual({
+      command: 'import',
+      dryRun: false,
+      input: bundlePath,
+      service: '__SERVICE_NAME__',
+      tables: [{ name: 'posts', rowCount: 1 }],
+    })
+    await expect(readPosts(targetDb.url)).resolves.toMatchObject([
+      {
+        id: 'post-1',
+        title: 'Hello',
+        content: 'world',
+      },
+    ])
   })
 
   it('can introspect code and live database schemas separately', async () => {
