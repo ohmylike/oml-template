@@ -31,7 +31,7 @@ describe('runCli integration', () => {
 
     expect(codeSchema).toMatchObject({
       source: 'code',
-      tables: [expect.objectContaining({ name: 'posts' })],
+      tables: expect.arrayContaining([expect.objectContaining({ name: 'posts' })]),
     })
     expect(dbSchema).toMatchObject({
       source: 'database',

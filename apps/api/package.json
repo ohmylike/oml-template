@@ -18,7 +18,9 @@
     "logs:production": "wrangler tail --env production --format pretty"
   },
   "dependencies": {
+    "@better-auth/api-key": "^1.5.4",
     "@oml-__SERVICE_NAME__/core": "workspace:*",
+    "better-auth": "^1.5.4",
     "hono": "^4.12",
     "valibot": "^1.2.0"
   },

@@ -8,6 +8,7 @@ upload_source_maps = true
 [vars]
 ENVIRONMENT = "development"
 SERVICE_NAME = "__SERVICE_NAME__"
+AUTH_MODE = "disabled"
 
 [[kv_namespaces]]
 binding = "CACHE"
@@ -42,6 +43,7 @@ custom_domain = true
 [env.production.vars]
 ENVIRONMENT = "production"
 SERVICE_NAME = "__SERVICE_NAME__"
+AUTH_MODE = "disabled"
 
 [[env.production.r2_buckets]]
 binding = "UPLOADS"

@@ -48,11 +48,25 @@ function toDbValue(value: unknown): InValue {
   return JSON.stringify(value)
 }
 
+async function listExistingTableNames(client: ReturnType<typeof createClient>) {
+  const result = await client.execute(`
+    select name
+    from sqlite_master
+    where type = 'table'
+      and name not like 'sqlite_%'
+    order by name
+  `)
+
+  return new Set(result.rows.map((row) => String(row.name)))
+}
+
 export async function exportDatabase(options: DbConnectionOptions) {
-  const tables = listSchemaTables()
+  const managedTables = listSchemaTables()
   const client = createClient(options)
 
   try {
+    const existingTableNames = await listExistingTableNames(client)
+    const tables = managedTables.filter((table) => existingTableNames.has(table.name))
     const data = Object.fromEntries(
       await Promise.all(
         tables.map(async (table) => {

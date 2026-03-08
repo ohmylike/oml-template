@@ -3,6 +3,7 @@ import { HTTPException } from 'hono/http-exception'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createApp } from './app'
 import type { AppBindings, AppEnv } from './env'
+import { requireAuth } from './lib/auth'
 
 const { createDbMock } = vi.hoisted(() => ({
   createDbMock: vi.fn(() => ({ mocked: true })),
@@ -14,10 +15,13 @@ vi.mock('@oml-__SERVICE_NAME__/core/db/client', () => ({
 
 function createEnv(overrides: Partial<AppBindings> = {}): AppBindings {
   return {
-    TURSO_DATABASE_URL: 'libsql://__SERVICE_NAME__.test',
+    TURSO_DATABASE_URL: 'libsql://sandbox.test',
     TURSO_AUTH_TOKEN: 'test-token',
     ENVIRONMENT: 'development',
     SERVICE_NAME: '__SERVICE_NAME__',
+    AUTH_MODE: 'disabled',
+    BETTER_AUTH_SECRET: 'test-secret-0123456789abcdefghijklmnop',
+    BETTER_AUTH_URL: 'https://api.sandbox.ohmylike.app',
     CACHE: {} as KVNamespace,
     UPLOADS: {} as R2Bucket,
     ...overrides,
@@ -33,6 +37,19 @@ function createErrorRoutes() {
 
   app.get('/http-boom', () => {
     throw new HTTPException(401, { message: 'Denied' })
+  })
+
+  return app
+}
+
+function createProtectedRoutes() {
+  const app = new Hono<AppEnv>()
+
+  app.get('/protected', requireAuth(), (c) => {
+    return c.json({
+      userId: c.get('auth').userId,
+      method: c.get('auth').method,
+    })
   })
 
   return app
@@ -68,6 +85,51 @@ describe('createApp', () => {
       outcome: 'success',
       requestId: res.headers.get('X-Request-Id'),
     })
+  })
+
+  it('allows wildcard CORS for auth-free services and skips DB setup on preflight', async () => {
+    const app = createApp()
+    const res = await app.request(
+      '/api/health',
+      {
+        method: 'OPTIONS',
+        headers: {
+          origin: 'https://example.com',
+          'access-control-request-method': 'GET',
+        },
+      },
+      createEnv(),
+    )
+
+    expect(res.status).toBe(204)
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('*')
+    expect(res.headers.get('Access-Control-Allow-Credentials')).toBeNull()
+    expect(res.headers.get('Access-Control-Allow-Headers')).toContain('Authorization')
+    expect(res.headers.get('Access-Control-Allow-Headers')).toContain('X-API-Key')
+    expect(createDbMock).not.toHaveBeenCalled()
+  })
+
+  it('echoes trusted wildcard origins and enables credentials when better-auth is on', async () => {
+    const app = createApp()
+    const res = await app.request(
+      '/api/health',
+      {
+        method: 'OPTIONS',
+        headers: {
+          origin: 'https://pr-42.sandbox.ohmylike.app',
+          'access-control-request-method': 'GET',
+        },
+      },
+      createEnv({
+        AUTH_MODE: 'better-auth',
+        CORS_ALLOWED_ORIGINS: 'https://*.sandbox.ohmylike.app',
+      }),
+    )
+
+    expect(res.status).toBe(204)
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('https://pr-42.sandbox.ohmylike.app')
+    expect(res.headers.get('Access-Control-Allow-Credentials')).toBe('true')
+    expect(createDbMock).not.toHaveBeenCalled()
   })
 
   it('prefers Cloudflare Ray ID over client supplied X-Request-Id', async () => {
@@ -124,6 +186,54 @@ describe('createApp', () => {
       status: 404,
       outcome: 'client_error',
       requestId: 'generated-request-id',
+    })
+  })
+
+  it('fails closed if a protected route is mounted while auth is disabled', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    const app = createApp().route('/api', createProtectedRoutes())
+    const res = await app.request('/api/protected', undefined, createEnv())
+
+    expect(res.status).toBe(503)
+    expect(await res.json()).toEqual({
+      requestId: expect.any(String),
+      error: {
+        code: 'auth_not_enabled',
+        message: 'Authentication is not enabled for this service',
+      },
+    })
+    expect(warnSpy.mock.calls[0]?.[0]).toMatchObject({
+      path: '/api/protected',
+      status: 503,
+      outcome: 'server_error',
+    })
+  })
+
+  it('returns 401 for protected routes when better-auth is enabled but no credentials are provided', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    const app = createApp().route('/api', createProtectedRoutes())
+    const res = await app.request(
+      '/api/protected',
+      undefined,
+      createEnv({
+        AUTH_MODE: 'better-auth',
+      }),
+    )
+
+    expect(res.status).toBe(401)
+    expect(await res.json()).toEqual({
+      requestId: expect.any(String),
+      error: {
+        code: 'auth_required',
+        message: 'Authentication required',
+      },
+    })
+    expect(warnSpy.mock.calls[0]?.[0]).toMatchObject({
+      path: '/api/protected',
+      status: 401,
+      outcome: 'client_error',
     })
   })
 

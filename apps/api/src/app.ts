@@ -1,6 +1,8 @@
 import { Hono } from 'hono'
 import { requestId } from 'hono/request-id'
 import type { AppEnv } from './env'
+import { createAuthContextMiddleware, handleAuthRequest } from './lib/auth'
+import { createApiCors } from './lib/cors'
 import { createErrorResponse, getErrorResponseDetails } from './lib/errors'
 import { createRequestLogger } from './lib/logging'
 import { getRequestId } from './lib/request-context'
@@ -24,6 +26,8 @@ export function createApp() {
 
   app.use('*', createRequestLogger())
 
+  app.use('/api/*', createApiCors())
+
   app.use('/api/*', async (c, next) => {
     const { createDb } = await import('@oml-__SERVICE_NAME__/core/db/client')
     c.set('db', createDb({
@@ -32,6 +36,10 @@ export function createApp() {
     }))
     await next()
   })
+
+  app.use('/api/*', createAuthContextMiddleware())
+
+  app.on(['GET', 'POST'], '/api/auth/*', handleAuthRequest)
 
   app.route('/api', healthRoutes)
 
