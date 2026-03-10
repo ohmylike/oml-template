@@ -18,6 +18,14 @@ gh repo create ohmylike/oml-__SERVICE_NAME__ --private --source=. --remote=origi
 git add -A && git commit -m "bootstrap: initialize oml-__SERVICE_NAME__" && git push
 ```
 
+Optional bootstrap selections can be passed explicitly when you want to pin the v1 selection result up front:
+
+```bash
+./bootstrap.sh __SERVICE_NAME__ --web b2b
+./bootstrap.sh __SERVICE_NAME__ --features user-auth,tracking
+./bootstrap.sh __SERVICE_NAME__ --web b2c --features none
+```
+
 Do not use `gh repo create --push` for the first initialization. The intended order is
 `repo create -> bootstrap -> secret sync -> enable deploy -> first push`.
 
@@ -37,7 +45,9 @@ op whoami
 
 `./bootstrap.sh` now creates both `oml-__SERVICE_NAME__-uploads` and `oml-__SERVICE_NAME__-uploads-dev`,
 creates `oml-__SERVICE_NAME__-db-prod` and `oml-__SERVICE_NAME__-db-dev`, and writes a local `.dev.vars`
-with the dev DB URL and token for `wrangler dev`. The script is safe to rerun until it completes and deletes itself.
+with the dev DB URL and token for `wrangler dev`. In non-interactive runs, omitted selections default to
+`web=b2b` and `features=none`. `user-auth` is a bootstrap-time optional scaffold name only; it is not the same
+thing as any app auth preset or manifest auth mode. The script is safe to rerun until it completes and deletes itself.
 
 If the GitHub organization is on the Free plan and organization secrets are not available for the new private repo,
 run the shared repo secret sync explicitly before the first push:
