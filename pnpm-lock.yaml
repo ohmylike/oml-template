@@ -100,6 +100,9 @@ importers:
       '@oml-__SERVICE_NAME__/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@oml-__SERVICE_NAME__/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@tanstack/react-query':
         specifier: ^5.90
         version: 5.90.21(react@19.2.4)
@@ -152,6 +155,9 @@ importers:
       '@cloudflare/vite-plugin':
         specifier: ^1.26
         version: 1.26.1(vite@7.3.1(@types/node@25.3.5)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0))(workerd@1.20260301.1)(wrangler@4.71.0(@cloudflare/workers-types@4.20260307.1))
+      '@oml-__SERVICE_NAME__/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@tanstack/react-router':
         specifier: ^1.166
         version: 1.166.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -239,6 +245,12 @@ importers:
       typescript:
         specifier: ^5.9
         version: 5.9.3
+
+  packages/ui:
+    devDependencies:
+      tailwindcss:
+        specifier: ^4.2.1
+        version: 4.2.1
 
 packages:
 

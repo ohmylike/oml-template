@@ -6,7 +6,7 @@ Monorepo for the __SERVICE_NAME__ service on ohmylike.app.
 
 This repository was created from [oml-template](https://github.com/ohmylike/oml-template).
 
-Create the GitHub repo without `--push`, bootstrap locally, sync secrets, enable production deploy,
+Create the GitHub repo without `--push`, bootstrap locally, sync GitHub secrets/variables, enable production deploy,
 then do the first push:
 
 ```bash
@@ -23,11 +23,11 @@ Optional bootstrap selections can be passed explicitly when you want to pin the 
 ```bash
 ./bootstrap.sh __SERVICE_NAME__ --web b2b
 ./bootstrap.sh __SERVICE_NAME__ --features user-auth,tracking
-./bootstrap.sh __SERVICE_NAME__ --web b2c --features none
+./bootstrap.sh __SERVICE_NAME__ --web b2c --features none --style neutral
 ```
 
 Do not use `gh repo create --push` for the first initialization. The intended order is
-`repo create -> bootstrap -> secret sync -> enable deploy -> first push`.
+`repo create -> bootstrap -> config sync -> enable deploy -> first push`.
 
 Before `./bootstrap.sh`, make sure Cloudflare and Turso CLIs are authenticated:
 
@@ -46,16 +46,17 @@ op whoami
 `./bootstrap.sh` now creates both `oml-__SERVICE_NAME__-uploads` and `oml-__SERVICE_NAME__-uploads-dev`,
 creates `oml-__SERVICE_NAME__-db-prod` and `oml-__SERVICE_NAME__-db-dev`, and writes a local `.dev.vars`
 with the dev DB URL and token for `wrangler dev`. In non-interactive runs, omitted selections default to
-`web=b2b` and `features=none`. `user-auth` is a bootstrap-time optional scaffold name only; it is not the same
+`web=b2b`, `features=none`, `style=terra`. `user-auth` is a bootstrap-time optional scaffold name only; it is not the same
 thing as any app auth preset or manifest auth mode. The script is safe to rerun until it completes and deletes itself.
+`oml-template` 自体は `terra` / `neutral` / `vivid` を保持するが、生成された repo では選択した style flavor だけを残す。
 
 If the GitHub organization is on the Free plan and organization secrets are not available for the new private repo,
-run the shared repo secret sync explicitly before the first push:
+run the shared repo config sync explicitly before the first push:
 
 ```bash
 REPO=ohmylike/oml-__SERVICE_NAME__
 op read 'op://ohmylike-prod/cloudflare/api_token' | gh secret set CLOUDFLARE_API_TOKEN --repo "$REPO"
-op read 'op://ohmylike-prod/cloudflare/account_id' | gh secret set CLOUDFLARE_ACCOUNT_ID --repo "$REPO"
+gh variable set CLOUDFLARE_ACCOUNT_ID --repo "$REPO" --body "$(op read 'op://ohmylike-prod/cloudflare/account_id')"
 op read 'op://ohmylike-prod/turso/api_token' | gh secret set TURSO_API_TOKEN --repo "$REPO"
 op read 'op://ohmylike-prod/turso/preview_auth_token' | gh secret set TURSO_PREVIEW_AUTH_TOKEN --repo "$REPO"
 ```
@@ -74,7 +75,23 @@ apps/
 packages/
   core/        Business logic, DB schema (Drizzle + Turso)
   api-client/  Type-safe API client (Hono RPC)
+  ui/          Shared style foundation and UI contract metadata
 ```
+
+## UI Contract
+
+`internal` / `b2b` / `b2c` は audience id です。frontend surface は `apps/web` (`web_app`) と
+`apps/www` (`public_site`) の 2 つを維持します。
+
+style は `StyleFlavor` として扱い、template には全 flavor を保持します。
+bootstrap 後の generated repo は single-flavor を基本とし、`--style` で選択した flavor だけを残します。
+
+詳細は次の docs を参照してください。
+
+- [ADR 0001: Web UI Matrix](docs/adr/0001-web-ui-matrix.md)
+- [ADR 0002: Design Style Flavors](docs/adr/0002-design-style-flavors.md)
+- [ADR 0003: Catalog-Driven UI Composition Contract](docs/adr/0003-catalog-driven-ui-composition.md)
+- [Catalog-Driven UI Roadmap](docs/catalog-ui-roadmap.md)
 
 ## Development
 
@@ -97,10 +114,10 @@ pnpm deploy       # api + web to production
 ```
 
 Preview environments are automatically created on PR open and destroyed on PR close.
-Production deploy workflow also requires the GitHub repo secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `TURSO_API_TOKEN`, `TURSO_PREVIEW_AUTH_TOKEN`, and service-specific `TURSO_PRODUCTION_AUTH_TOKEN`.
+Preview / production workflows require the GitHub repo secrets `CLOUDFLARE_API_TOKEN`, `TURSO_API_TOKEN`, `TURSO_PREVIEW_AUTH_TOKEN`, service-specific `TURSO_PRODUCTION_AUTH_TOKEN`, and repo variable `CLOUDFLARE_ACCOUNT_ID`.
 It is gated by repo variable `OML_ENABLE_PRODUCTION_DEPLOY=1`, which the sync script can set for you.
-Preview deploy skips itself until the required preview secrets are available, so a new repo can stay green before secret sync.
-If the GitHub org is on the Free plan, treat repo-level secret sync as mandatory before the first push.
+Preview deploy skips itself until the required preview secrets and variables are available, so a new repo can stay green before config sync.
+If the GitHub org is on the Free plan, treat repo-level config sync as mandatory before the first push.
 
 ## Observability
 

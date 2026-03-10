@@ -6,22 +6,26 @@ SKIP_DEV_VARS="${OML_BOOTSTRAP_SKIP_DEV_VARS:-0}"
 KV_NAMESPACE_ID="${OML_BOOTSTRAP_KV_NAMESPACE_ID:-0154d85d8ec744069f871b097435751f}"
 BOOTSTRAP_DEFAULT_WEB_VARIANT="b2b"
 BOOTSTRAP_DEFAULT_FEATURES_RAW="none"
+BOOTSTRAP_DEFAULT_STYLE_FLAVOR="terra"
 BOOTSTRAP_ALLOWED_WEB_VARIANTS_CSV="b2b,b2c"
 BOOTSTRAP_ALLOWED_FEATURES_CSV="user-auth,tracking"
 BOOTSTRAP_ALLOWED_FEATURES_WITH_NONE_CSV="user-auth,tracking,none"
+BOOTSTRAP_ALLOWED_STYLE_FLAVORS_CSV="terra,neutral,vivid"
 
 SERVICE_NAME=""
 CLI_WEB_VARIANT=""
 CLI_FEATURES_RAW=""
+CLI_STYLE_FLAVOR=""
 BOOTSTRAP_WEB_VARIANT=""
 BOOTSTRAP_FEATURES_CSV=""
+BOOTSTRAP_STYLE_FLAVOR=""
 PROD_BUCKET_NAME=""
 DEV_BUCKET_NAME=""
 PROD_DB_NAME=""
 DEV_DB_NAME=""
 
 usage() {
-  echo "Usage: ./bootstrap.sh <service_name> [--web ${BOOTSTRAP_ALLOWED_WEB_VARIANTS_CSV//,/|}] [--features ${BOOTSTRAP_ALLOWED_FEATURES_CSV}|none]" >&2
+  echo "Usage: ./bootstrap.sh <service_name> [--web ${BOOTSTRAP_ALLOWED_WEB_VARIANTS_CSV//,/|}] [--features ${BOOTSTRAP_ALLOWED_FEATURES_CSV}|none] [--style ${BOOTSTRAP_ALLOWED_STYLE_FLAVORS_CSV//,/|}]" >&2
 }
 
 fail() {
@@ -53,8 +57,10 @@ reset_bootstrap_runtime_state() {
   SERVICE_NAME=""
   CLI_WEB_VARIANT=""
   CLI_FEATURES_RAW=""
+  CLI_STYLE_FLAVOR=""
   BOOTSTRAP_WEB_VARIANT=""
   BOOTSTRAP_FEATURES_CSV=""
+  BOOTSTRAP_STYLE_FLAVOR=""
   PROD_BUCKET_NAME=""
   DEV_BUCKET_NAME=""
   PROD_DB_NAME=""
@@ -101,6 +107,17 @@ parse_args() {
         CLI_FEATURES_RAW="$2"
         shift 2
         ;;
+      --style)
+        if [[ $# -lt 2 ]]; then
+          fail "--style requires a value. Allowed values: ${BOOTSTRAP_ALLOWED_STYLE_FLAVORS_CSV}"
+        fi
+        if [[ -n "${CLI_STYLE_FLAVOR}" ]]; then
+          fail "--style may only be specified once."
+        fi
+
+        CLI_STYLE_FLAVOR="$2"
+        shift 2
+        ;;
       --*)
         fail "unknown option '$1'"
         ;;
@@ -137,6 +154,23 @@ normalize_web_variant() {
       ;;
     *)
       echo "Error: invalid web variant '${raw_value}'. Allowed values: ${BOOTSTRAP_ALLOWED_WEB_VARIANTS_CSV}" >&2
+      return 1
+      ;;
+  esac
+}
+
+normalize_style_flavor() {
+  local raw_value
+
+  raw_value="$(trim_whitespace "${1-}")"
+
+  case "${raw_value}" in
+    terra|neutral|vivid)
+      printf '%s' "${raw_value}"
+      return 0
+      ;;
+    *)
+      echo "Error: invalid style flavor '${raw_value}'. Allowed values: ${BOOTSTRAP_ALLOWED_STYLE_FLAVORS_CSV}" >&2
       return 1
       ;;
   esac
@@ -269,6 +303,44 @@ prompt_features_csv() {
   done
 }
 
+prompt_style_flavor() {
+  local raw_input
+  local normalized_value
+
+  while true; do
+    printf 'Select style flavor [1] terra [2] neutral [3] vivid (default: %s): ' "${BOOTSTRAP_DEFAULT_STYLE_FLAVOR}" >&2
+    if ! read -r raw_input; then
+      raw_input=""
+    fi
+
+    raw_input="$(trim_whitespace "${raw_input}")"
+
+    case "${raw_input}" in
+      "")
+        printf '%s' "${BOOTSTRAP_DEFAULT_STYLE_FLAVOR}"
+        return 0
+        ;;
+      1)
+        printf 'terra'
+        return 0
+        ;;
+      2)
+        printf 'neutral'
+        return 0
+        ;;
+      3)
+        printf 'vivid'
+        return 0
+        ;;
+    esac
+
+    if normalized_value="$(normalize_style_flavor "${raw_input}")"; then
+      printf '%s' "${normalized_value}"
+      return 0
+    fi
+  done
+}
+
 resolve_selection() {
   if [[ -n "${CLI_WEB_VARIANT}" ]]; then
     BOOTSTRAP_WEB_VARIANT="$(normalize_web_variant "${CLI_WEB_VARIANT}")"
@@ -286,9 +358,17 @@ resolve_selection() {
     BOOTSTRAP_FEATURES_CSV=""
   fi
 
-  export BOOTSTRAP_WEB_VARIANT BOOTSTRAP_FEATURES_CSV
+  if [[ -n "${CLI_STYLE_FLAVOR}" ]]; then
+    BOOTSTRAP_STYLE_FLAVOR="$(normalize_style_flavor "${CLI_STYLE_FLAVOR}")"
+  elif is_interactive_tty; then
+    BOOTSTRAP_STYLE_FLAVOR="$(prompt_style_flavor)"
+  else
+    BOOTSTRAP_STYLE_FLAVOR="${BOOTSTRAP_DEFAULT_STYLE_FLAVOR}"
+  fi
 
-  echo "Resolved selection: web=${BOOTSTRAP_WEB_VARIANT}, features=$(format_features_csv "${BOOTSTRAP_FEATURES_CSV}")"
+  export BOOTSTRAP_WEB_VARIANT BOOTSTRAP_FEATURES_CSV BOOTSTRAP_STYLE_FLAVOR
+
+  echo "Resolved selection: web=${BOOTSTRAP_WEB_VARIANT}, features=$(format_features_csv "${BOOTSTRAP_FEATURES_CSV}"), style=${BOOTSTRAP_STYLE_FLAVOR}"
 }
 
 has_feature() {
@@ -409,7 +489,35 @@ replace_placeholders() {
     -o -name "*.ts" -o -name "*.tsx" -o -name "*.md" -o -name "*.json" \
     -o -name "*.html" -o -name "*.css" \) \
     ! -path './.git/*' ! -path '*/node_modules/*' -print0 \
-    | xargs -0 perl -pi -e "s/__SERVICE_NAME__/${SERVICE_NAME}/g; s/__KV_NAMESPACE_ID__/${KV_NAMESPACE_ID}/g"
+    | xargs -0 perl -pi -e "s/__SERVICE_NAME__/${SERVICE_NAME}/g; s/__KV_NAMESPACE_ID__/${KV_NAMESPACE_ID}/g; s/__DEFAULT_STYLE_FLAVOR__/${BOOTSTRAP_STYLE_FLAVOR}/g"
+}
+
+prune_style_flavor_markers() {
+  local flavor_name="$1"
+  local file_path
+
+  require_command perl
+
+  while IFS= read -r -d '' file_path; do
+    perl -0pi -e "s@/\\* style-flavor:${flavor_name}:start \\*/.*?/\\* style-flavor:${flavor_name}:end \\*/\\n?@@gs" "${file_path}"
+  done < <(
+    find . -type f \( -name "*.css" -o -name "*.ts" -o -name "*.tsx" \) \
+      ! -path './.git/*' ! -path '*/node_modules/*' -print0
+  )
+}
+
+apply_style_selection() {
+  local flavor_name
+
+  echo "Applying style selection: ${BOOTSTRAP_STYLE_FLAVOR}"
+
+  for flavor_name in terra neutral vivid; do
+    if [[ "${flavor_name}" == "${BOOTSTRAP_STYLE_FLAVOR}" ]]; then
+      continue
+    fi
+
+    prune_style_flavor_markers "${flavor_name}"
+  done
 }
 
 apply_web_variant_selection() {
@@ -464,6 +572,7 @@ main() {
   echo "Bootstrapping oml-${SERVICE_NAME}..."
 
   replace_placeholders
+  apply_style_selection
   apply_web_variant_selection
   apply_feature_selection
   provision_infrastructure

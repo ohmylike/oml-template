@@ -1,0 +1,23 @@
+{
+  "name": "@oml-__SERVICE_NAME__/ui",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./globals.css": "./src/styles/globals.css",
+    "./ui-matrix": {
+      "types": "./dist/ui-matrix.d.ts",
+      "import": "./dist/ui-matrix.js"
+    }
+  },
+  "scripts": {
+    "build": "tsdown"
+  },
+  "devDependencies": {
+    "tailwindcss": "^4.2.1"
+  }
+}

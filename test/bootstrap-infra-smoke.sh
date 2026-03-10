@@ -12,6 +12,14 @@ CASE_STDOUT=""
 CASE_STDERR=""
 CASE_STATUS=0
 
+style_matrix_file() {
+  printf '%s/packages/ui/src/ui-matrix.ts' "${CASE_REPO}"
+}
+
+style_globals_file() {
+  printf '%s/packages/ui/src/styles/globals.css' "${CASE_REPO}"
+}
+
 assert_contains() {
   local file_path="$1"
   local expected="$2"
@@ -79,6 +87,26 @@ assert_not_exists() {
 
   echo "Expected ${path} to not exist" >&2
   exit 1
+}
+
+assert_style_selection_applied() {
+  local selected_style="$1"
+  local flavor_name
+
+  assert_contains "${CASE_REPO}/apps/web/index.html" "data-style=\"${selected_style}\""
+  assert_contains "${CASE_REPO}/apps/www/src/routes/__root.tsx" "data-style=\"${selected_style}\""
+  assert_contains "$(style_matrix_file)" "export const defaultStyleFlavorId = '${selected_style}' as StyleFlavorId"
+
+  for flavor_name in terra neutral vivid; do
+    if [[ "${flavor_name}" == "${selected_style}" ]]; then
+      assert_contains "$(style_globals_file)" "data-style=\"${flavor_name}\""
+      assert_contains "$(style_matrix_file)" "'${flavor_name}'"
+      continue
+    fi
+
+    assert_not_contains "$(style_globals_file)" "data-style=\"${flavor_name}\""
+    assert_not_contains "$(style_matrix_file)" "'${flavor_name}'"
+  done
 }
 
 cleanup_case() {
@@ -239,6 +267,7 @@ run_selection_helper() {
 
     printf '%s' "${BOOTSTRAP_WEB_VARIANT}" > "${CASE_STATE}/resolved-web.txt"
     printf '%s' "${BOOTSTRAP_FEATURES_CSV}" > "${CASE_STATE}/resolved-features.txt"
+    printf '%s' "${BOOTSTRAP_STYLE_FLAVOR}" > "${CASE_STATE}/resolved-style.txt"
 
     if has_feature "user-auth"; then
       printf '1' > "${CASE_STATE}/has-user-auth.txt"
@@ -267,7 +296,8 @@ assert_successful_bootstrap_case() {
   local precreate_resources="$2"
   local expected_web="$3"
   local expected_features="$4"
-  shift 4
+  local expected_style="$5"
+  shift 5
 
   prepare_case "${precreate_resources}"
   run_bootstrap "$@"
@@ -277,9 +307,11 @@ assert_successful_bootstrap_case() {
   assert_contains "${CASE_REPO}/README.md" "oml-smoke"
   assert_contains "${CASE_REPO}/.dev.vars" "TURSO_DATABASE_URL=libsql://oml-smoke-db-dev.turso.dev"
   assert_contains "${CASE_REPO}/.dev.vars" "TURSO_AUTH_TOKEN=token-for-oml-smoke-db-dev"
-  assert_contains "${CASE_STDOUT}" "Resolved selection: web=${expected_web}, features=${expected_features}"
+  assert_contains "${CASE_STDOUT}" "Resolved selection: web=${expected_web}, features=${expected_features}, style=${expected_style}"
+  assert_contains "${CASE_STDOUT}" "Applying style selection: ${expected_style}"
   assert_contains "${CASE_STDOUT}" "Applying web variant selection (v1 no-op): ${expected_web}"
   assert_contains "${CASE_STDOUT}" "Applying feature selection (v1 no-op): ${expected_features}"
+  assert_style_selection_applied "${expected_style}"
 
   if [[ "${precreate_resources}" == "1" ]]; then
     assert_not_contains "${CASE_LOG}" "create-bucket:"
@@ -317,22 +349,26 @@ assert_failure_before_provisioning() {
 }
 
 echo "Running bootstrap smoke: default bootstrap with fresh infra"
-assert_successful_bootstrap_case "fresh infra defaults" "0" "b2b" "none" smoke
+assert_successful_bootstrap_case "fresh infra defaults" "0" "b2b" "none" "terra" smoke
 
 echo "Running bootstrap smoke: default bootstrap with existing infra"
-assert_successful_bootstrap_case "existing infra defaults" "1" "b2b" "none" smoke
+assert_successful_bootstrap_case "existing infra defaults" "1" "b2b" "none" "terra" smoke
 
 echo "Running bootstrap smoke: explicit web/features flags"
-assert_successful_bootstrap_case "explicit selection flags" "0" "b2b" "user-auth,tracking" \
+assert_successful_bootstrap_case "explicit selection flags" "0" "b2b" "user-auth,tracking" "terra" \
   smoke --web b2b --features user-auth,tracking
 
 echo "Running bootstrap smoke: normalized features order"
-assert_successful_bootstrap_case "feature normalization" "0" "b2b" "user-auth,tracking" \
+assert_successful_bootstrap_case "feature normalization" "0" "b2b" "user-auth,tracking" "terra" \
   smoke --features tracking,user-auth,tracking
 
 echo "Running bootstrap smoke: explicit none features"
-assert_successful_bootstrap_case "features none" "0" "b2c" "none" \
+assert_successful_bootstrap_case "features none" "0" "b2c" "none" "terra" \
   smoke --web b2c --features none
+
+echo "Running bootstrap smoke: explicit style flag"
+assert_successful_bootstrap_case "style selection" "0" "b2b" "none" "neutral" \
+  smoke --style neutral
 
 echo "Running bootstrap smoke: none mixed with feature fails"
 assert_failure_before_provisioning "none with feature" "'none' cannot be combined with other features." \
@@ -350,6 +386,10 @@ echo "Running bootstrap smoke: unknown web fails"
 assert_failure_before_provisioning "unknown web" "invalid web variant 'b2x'" \
   smoke --web b2x
 
+echo "Running bootstrap smoke: unknown style fails"
+assert_failure_before_provisioning "unknown style" "invalid style flavor 'mono'" \
+  smoke --style mono
+
 echo "Running bootstrap smoke: missing service_name fails"
 prepare_case "0"
 run_bootstrap
@@ -357,7 +397,7 @@ if [[ "${CASE_STATUS}" == "0" ]]; then
   echo "Expected bootstrap failure for missing service_name" >&2
   exit 1
 fi
-assert_contains "${CASE_STDERR}" "Usage: ./bootstrap.sh <service_name> [--web b2b|b2c] [--features user-auth,tracking|none]"
+assert_contains "${CASE_STDERR}" "Usage: ./bootstrap.sh <service_name> [--web b2b|b2c] [--features user-auth,tracking|none] [--style terra|neutral|vivid]"
 assert_exists "${CASE_REPO}/bootstrap.sh"
 assert_contains "${CASE_REPO}/README.md" "__SERVICE_NAME__"
 assert_not_exists "${CASE_REPO}/.dev.vars"
@@ -369,7 +409,7 @@ if [[ "${CASE_STATUS}" == "0" ]]; then
   echo "Expected bootstrap failure for extra positional" >&2
   exit 1
 fi
-assert_contains "${CASE_STDERR}" "Usage: ./bootstrap.sh <service_name> [--web b2b|b2c] [--features user-auth,tracking|none]"
+assert_contains "${CASE_STDERR}" "Usage: ./bootstrap.sh <service_name> [--web b2b|b2c] [--features user-auth,tracking|none] [--style terra|neutral|vivid]"
 assert_exists "${CASE_REPO}/bootstrap.sh"
 assert_contains "${CASE_REPO}/README.md" "__SERVICE_NAME__"
 assert_not_exists "${CASE_REPO}/.dev.vars"
@@ -378,24 +418,27 @@ assert_not_contains "${CASE_LOG}" "create-db:"
 
 echo "Running bootstrap smoke: interactive prompt order"
 prepare_case "0"
-run_selection_helper $'2\ntracking,user-auth,tracking\n' smoke
+run_selection_helper $'2\ntracking,user-auth,tracking\n3\n' smoke
 assert_equals "0" "${CASE_STATUS}" "interactive prompt order exit status"
-assert_matches "${CASE_STDERR}" 'Select web variant.*Select features'
+assert_matches "${CASE_STDERR}" 'Select web variant.*Select features.*Select style flavor'
 assert_equals "b2c" "$(cat "${CASE_STATE}/resolved-web.txt")" "interactive resolved web"
 assert_equals "user-auth,tracking" "$(cat "${CASE_STATE}/resolved-features.txt")" "interactive resolved features"
+assert_equals "vivid" "$(cat "${CASE_STATE}/resolved-style.txt")" "interactive resolved style"
 assert_equals "1" "$(cat "${CASE_STATE}/has-user-auth.txt")" "has_feature user-auth"
 assert_equals "1" "$(cat "${CASE_STATE}/has-tracking.txt")" "has_feature tracking"
 assert_equals "0" "$(cat "${CASE_STATE}/has-missing.txt")" "has_feature missing"
-assert_contains "${CASE_STDOUT}" "Resolved selection: web=b2c, features=user-auth,tracking"
+assert_contains "${CASE_STDOUT}" "Resolved selection: web=b2c, features=user-auth,tracking, style=vivid"
 
 echo "Running bootstrap smoke: interactive partial prompt only asks missing axis"
 prepare_case "0"
-run_selection_helper $'\n' smoke --web b2c
+run_selection_helper $'\n\n' smoke --web b2c
 assert_equals "0" "${CASE_STATUS}" "interactive partial prompt exit status"
 assert_not_contains "${CASE_STDERR}" "Select web variant"
 assert_contains "${CASE_STDERR}" "Select features [user-auth,tracking|none] (default: none):"
+assert_contains "${CASE_STDERR}" "Select style flavor [1] terra [2] neutral [3] vivid (default: terra):"
 assert_equals "b2c" "$(cat "${CASE_STATE}/resolved-web.txt")" "interactive partial resolved web"
 assert_equals "" "$(cat "${CASE_STATE}/resolved-features.txt")" "interactive partial resolved features"
-assert_contains "${CASE_STDOUT}" "Resolved selection: web=b2c, features=none"
+assert_equals "terra" "$(cat "${CASE_STATE}/resolved-style.txt")" "interactive partial resolved style"
+assert_contains "${CASE_STDOUT}" "Resolved selection: web=b2c, features=none, style=terra"
 
 echo "bootstrap smoke passed"

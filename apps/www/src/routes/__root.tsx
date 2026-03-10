@@ -23,7 +23,7 @@ export const Route = createRootRoute({
 
 function RootComponent() {
   return (
-    <html lang="ja">
+    <html lang="ja" data-style="__DEFAULT_STYLE_FLAVOR__">
       <head>
         <HeadContent />
       </head>
