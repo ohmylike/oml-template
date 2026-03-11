@@ -20,6 +20,10 @@ style_globals_file() {
   printf '%s/packages/ui/src/styles/globals.css' "${CASE_REPO}"
 }
 
+style_index_file() {
+  printf '%s/packages/ui/src/index.ts' "${CASE_REPO}"
+}
+
 assert_contains() {
   local file_path="$1"
   local expected="$2"
@@ -94,8 +98,24 @@ assert_style_selection_applied() {
   local flavor_name
 
   assert_contains "${CASE_REPO}/apps/web/index.html" "data-style=\"${selected_style}\""
-  assert_contains "${CASE_REPO}/apps/www/src/routes/__root.tsx" "data-style=\"${selected_style}\""
+  assert_not_contains "${CASE_REPO}/apps/web/index.html" "__DEFAULT"
+  assert_contains "${CASE_REPO}/apps/web/src/router.tsx" "defaultStyleFlavorId"
+  assert_not_contains "${CASE_REPO}/apps/web/src/router.tsx" "useQueryState"
+  assert_not_contains "${CASE_REPO}/apps/web/src/router.tsx" "NuqsAdapter"
+  assert_not_contains "${CASE_REPO}/apps/web/src/router.tsx" "search-params"
+  assert_contains "${CASE_REPO}/apps/www/src/routes/__root.tsx" "data-style={defaultStyleFlavorId}"
+  assert_not_contains "${CASE_REPO}/apps/www/src/routes/__root.tsx" "useQueryState"
+  assert_not_contains "${CASE_REPO}/apps/www/src/routes/__root.tsx" "NuqsAdapter"
+  assert_not_contains "${CASE_REPO}/apps/www/src/routes/__root.tsx" "search-params"
   assert_contains "$(style_matrix_file)" "export const defaultStyleFlavorId = '${selected_style}' as StyleFlavorId"
+  assert_not_contains "$(style_matrix_file)" "configuredDefaultStyleFlavorId"
+  assert_not_contains "$(style_matrix_file)" "templatePreviewStyleFlavorId"
+  assert_not_contains "$(style_index_file)" "search-params"
+  assert_not_exists "${CASE_REPO}/packages/ui/src/lib/search-params.ts"
+  assert_not_exists "${CASE_REPO}/packages/ui/src/lib/search-params.test.ts"
+  assert_not_contains "${CASE_REPO}/apps/web/package.json" "\"nuqs\""
+  assert_not_contains "${CASE_REPO}/apps/www/package.json" "\"nuqs\""
+  assert_not_contains "${CASE_REPO}/packages/ui/package.json" "\"nuqs\""
 
   for flavor_name in terra neutral vivid; do
     if [[ "${flavor_name}" == "${selected_style}" ]]; then
@@ -349,21 +369,21 @@ assert_failure_before_provisioning() {
 }
 
 echo "Running bootstrap smoke: default bootstrap with fresh infra"
-assert_successful_bootstrap_case "fresh infra defaults" "0" "b2b" "none" "terra" smoke
+assert_successful_bootstrap_case "fresh infra defaults" "0" "b2b" "none" "neutral" smoke
 
 echo "Running bootstrap smoke: default bootstrap with existing infra"
-assert_successful_bootstrap_case "existing infra defaults" "1" "b2b" "none" "terra" smoke
+assert_successful_bootstrap_case "existing infra defaults" "1" "b2b" "none" "neutral" smoke
 
 echo "Running bootstrap smoke: explicit web/features flags"
-assert_successful_bootstrap_case "explicit selection flags" "0" "b2b" "user-auth,tracking" "terra" \
+assert_successful_bootstrap_case "explicit selection flags" "0" "b2b" "user-auth,tracking" "neutral" \
   smoke --web b2b --features user-auth,tracking
 
 echo "Running bootstrap smoke: normalized features order"
-assert_successful_bootstrap_case "feature normalization" "0" "b2b" "user-auth,tracking" "terra" \
+assert_successful_bootstrap_case "feature normalization" "0" "b2b" "user-auth,tracking" "neutral" \
   smoke --features tracking,user-auth,tracking
 
 echo "Running bootstrap smoke: explicit none features"
-assert_successful_bootstrap_case "features none" "0" "b2c" "none" "terra" \
+assert_successful_bootstrap_case "features none" "0" "b2c" "none" "neutral" \
   smoke --web b2c --features none
 
 echo "Running bootstrap smoke: explicit style flag"
@@ -435,10 +455,10 @@ run_selection_helper $'\n\n' smoke --web b2c
 assert_equals "0" "${CASE_STATUS}" "interactive partial prompt exit status"
 assert_not_contains "${CASE_STDERR}" "Select web variant"
 assert_contains "${CASE_STDERR}" "Select features [user-auth,tracking|none] (default: none):"
-assert_contains "${CASE_STDERR}" "Select style flavor [1] terra [2] neutral [3] vivid (default: terra):"
+assert_contains "${CASE_STDERR}" "Select style flavor [1] terra [2] neutral [3] vivid (default: neutral):"
 assert_equals "b2c" "$(cat "${CASE_STATE}/resolved-web.txt")" "interactive partial resolved web"
 assert_equals "" "$(cat "${CASE_STATE}/resolved-features.txt")" "interactive partial resolved features"
-assert_equals "terra" "$(cat "${CASE_STATE}/resolved-style.txt")" "interactive partial resolved style"
-assert_contains "${CASE_STDOUT}" "Resolved selection: web=b2c, features=none, style=terra"
+assert_equals "neutral" "$(cat "${CASE_STATE}/resolved-style.txt")" "interactive partial resolved style"
+assert_contains "${CASE_STDOUT}" "Resolved selection: web=b2c, features=none, style=neutral"
 
 echo "bootstrap smoke passed"

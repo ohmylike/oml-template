@@ -46,9 +46,10 @@ op whoami
 `./bootstrap.sh` now creates both `oml-__SERVICE_NAME__-uploads` and `oml-__SERVICE_NAME__-uploads-dev`,
 creates `oml-__SERVICE_NAME__-db-prod` and `oml-__SERVICE_NAME__-db-dev`, and writes a local `.dev.vars`
 with the dev DB URL and token for `wrangler dev`. In non-interactive runs, omitted selections default to
-`web=b2b`, `features=none`, `style=terra`. `user-auth` is a bootstrap-time optional scaffold name only; it is not the same
+`web=b2b`, `features=none`, `style=neutral`. `user-auth` is a bootstrap-time optional scaffold name only; it is not the same
 thing as any app auth preset or manifest auth mode. The script is safe to rerun until it completes and deletes itself.
-`oml-template` 自体は `terra` / `neutral` / `vivid` を保持するが、生成された repo では選択した style flavor だけを残す。
+`oml-template` 自体は `terra` / `neutral` / `vivid` を保持し、template source では `?style=terra|neutral|vivid` で preview 比較できる。
+bootstrap 後の service repo は選択した flavor だけを残し、`--style` 未指定時は `neutral` を使う。
 
 If the GitHub organization is on the Free plan and organization secrets are not available for the new private repo,
 run the shared repo config sync explicitly before the first push:
@@ -83,8 +84,10 @@ packages/
 `internal` / `b2b` / `b2c` は audience id です。frontend surface は `apps/web` (`web_app`) と
 `apps/www` (`public_site`) の 2 つを維持します。
 
-style は `StyleFlavor` として扱い、template には全 flavor を保持します。
-bootstrap 後の generated repo は single-flavor を基本とし、`--style` で選択した flavor だけを残します。
+style は `StyleFlavor` として扱います。source template は `terra` / `neutral` / `vivid` を保持し、
+bootstrap 後の service repo は選択した flavor だけを残します。
+`./bootstrap.sh --style terra|neutral|vivid` で生成 repo の default flavor を決め、未指定時は `neutral` を使います。
+`?style=` preview override は template source を直接動かすときだけ利用できます。
 
 詳細は次の docs を参照してください。
 

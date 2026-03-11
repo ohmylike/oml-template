@@ -17,7 +17,14 @@ export interface StyleFlavorMeta {
   description: string
 }
 
-export const defaultStyleFlavorId = '__DEFAULT_STYLE_FLAVOR__' as StyleFlavorId
+const configuredDefaultStyleFlavorId = '__DEFAULT_STYLE_FLAVOR__'
+const templatePreviewStyleFlavorId = 'neutral' satisfies StyleFlavorId
+
+export const defaultStyleFlavorId = styleFlavorIds.includes(
+  configuredDefaultStyleFlavorId as StyleFlavorId,
+)
+  ? (configuredDefaultStyleFlavorId as StyleFlavorId)
+  : templatePreviewStyleFlavorId
 
 export const styleFlavorMeta = {
   /* style-flavor:terra:start */

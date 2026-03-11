@@ -1,9 +1,13 @@
 import {
   createRootRoute,
+  Link,
   HeadContent,
   Outlet,
   Scripts,
 } from '@tanstack/react-router'
+import { NuqsAdapter } from 'nuqs/adapters/tanstack-router'
+import { useQueryState } from 'nuqs'
+import { styleFlavorParser } from '@oml-__SERVICE_NAME__/ui/lib/search-params'
 import appCss from '../styles/globals.css?url'
 
 export const Route = createRootRoute({
@@ -19,11 +23,32 @@ export const Route = createRootRoute({
     ],
   }),
   component: RootComponent,
+  notFoundComponent: NotFoundComponent,
 })
+
+function NotFoundComponent() {
+  return (
+    <div style={{ textAlign: 'center', padding: '4rem 1rem' }}>
+      <h1>404</h1>
+      <p>ページが見つかりません</p>
+      <Link to="/">ホームに戻る</Link>
+    </div>
+  )
+}
 
 function RootComponent() {
   return (
-    <html lang="ja" data-style="__DEFAULT_STYLE_FLAVOR__">
+    <NuqsAdapter>
+      <RootInner />
+    </NuqsAdapter>
+  )
+}
+
+function RootInner() {
+  const [style] = useQueryState('style', styleFlavorParser)
+
+  return (
+    <html lang="ja" data-style={style}>
       <head>
         <HeadContent />
       </head>

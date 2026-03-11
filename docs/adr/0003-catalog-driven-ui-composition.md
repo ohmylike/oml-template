@@ -32,7 +32,7 @@ Audience x Surface x Preset x StyleFlavor x Feature
 ### 4. template は multi-flavor、生成 repo は single-flavor
 
 - template: 全 flavor を保持
-- generated repo: 選択 flavor のみ保持
+- generated repo: 選択 flavor を default として注入し、prune は後続フェーズで完成させる
 
 ### 5. sandbox から template への backport 条件
 

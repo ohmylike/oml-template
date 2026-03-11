@@ -6,7 +6,7 @@ SKIP_DEV_VARS="${OML_BOOTSTRAP_SKIP_DEV_VARS:-0}"
 KV_NAMESPACE_ID="${OML_BOOTSTRAP_KV_NAMESPACE_ID:-0154d85d8ec744069f871b097435751f}"
 BOOTSTRAP_DEFAULT_WEB_VARIANT="b2b"
 BOOTSTRAP_DEFAULT_FEATURES_RAW="none"
-BOOTSTRAP_DEFAULT_STYLE_FLAVOR="terra"
+BOOTSTRAP_DEFAULT_STYLE_FLAVOR="neutral"
 BOOTSTRAP_ALLOWED_WEB_VARIANTS_CSV="b2b,b2c"
 BOOTSTRAP_ALLOWED_FEATURES_CSV="user-auth,tracking"
 BOOTSTRAP_ALLOWED_FEATURES_WITH_NONE_CSV="user-auth,tracking,none"
@@ -341,6 +341,31 @@ prompt_style_flavor() {
   done
 }
 
+resolve_style_flavor_from_manifest() {
+  # Reserved for a future catalog selection manifest.
+  return 1
+}
+
+resolve_style_flavor_selection() {
+  local manifest_style_flavor=""
+
+  if [[ -n "${CLI_STYLE_FLAVOR}" ]]; then
+    BOOTSTRAP_STYLE_FLAVOR="$(normalize_style_flavor "${CLI_STYLE_FLAVOR}")"
+    return 0
+  fi
+
+  if manifest_style_flavor="$(resolve_style_flavor_from_manifest)"; then
+    BOOTSTRAP_STYLE_FLAVOR="$(normalize_style_flavor "${manifest_style_flavor}")"
+    return 0
+  fi
+
+  if is_interactive_tty; then
+    BOOTSTRAP_STYLE_FLAVOR="$(prompt_style_flavor)"
+  else
+    BOOTSTRAP_STYLE_FLAVOR="${BOOTSTRAP_DEFAULT_STYLE_FLAVOR}"
+  fi
+}
+
 resolve_selection() {
   if [[ -n "${CLI_WEB_VARIANT}" ]]; then
     BOOTSTRAP_WEB_VARIANT="$(normalize_web_variant "${CLI_WEB_VARIANT}")"
@@ -358,13 +383,7 @@ resolve_selection() {
     BOOTSTRAP_FEATURES_CSV=""
   fi
 
-  if [[ -n "${CLI_STYLE_FLAVOR}" ]]; then
-    BOOTSTRAP_STYLE_FLAVOR="$(normalize_style_flavor "${CLI_STYLE_FLAVOR}")"
-  elif is_interactive_tty; then
-    BOOTSTRAP_STYLE_FLAVOR="$(prompt_style_flavor)"
-  else
-    BOOTSTRAP_STYLE_FLAVOR="${BOOTSTRAP_DEFAULT_STYLE_FLAVOR}"
-  fi
+  resolve_style_flavor_selection
 
   export BOOTSTRAP_WEB_VARIANT BOOTSTRAP_FEATURES_CSV BOOTSTRAP_STYLE_FLAVOR
 
@@ -506,6 +525,212 @@ prune_style_flavor_markers() {
   )
 }
 
+style_flavor_label() {
+  case "${BOOTSTRAP_STYLE_FLAVOR}" in
+    terra)
+      printf 'Terra'
+      ;;
+    neutral)
+      printf 'Neutral'
+      ;;
+    vivid)
+      printf 'Vivid'
+      ;;
+  esac
+}
+
+style_flavor_description() {
+  case "${BOOTSTRAP_STYLE_FLAVOR}" in
+    terra)
+      printf '暖色寄りの default style flavor。'
+      ;;
+    neutral)
+      printf 'zinc base の実務寄り flavor。'
+      ;;
+    vivid)
+      printf '強い accent を持つ high-contrast flavor。'
+      ;;
+  esac
+}
+
+write_single_style_ui_matrix() {
+  local style_label
+  local style_description
+
+  style_label="$(style_flavor_label)"
+  style_description="$(style_flavor_description)"
+
+  cat > packages/ui/src/ui-matrix.ts <<EOF
+export const styleFlavorIds = ['${BOOTSTRAP_STYLE_FLAVOR}'] as const
+
+export type StyleFlavorId = (typeof styleFlavorIds)[number]
+
+export interface StyleFlavorMeta {
+  label: string
+  description: string
+}
+
+export const defaultStyleFlavorId = '${BOOTSTRAP_STYLE_FLAVOR}' as StyleFlavorId
+
+export const styleFlavorMeta = {
+  ${BOOTSTRAP_STYLE_FLAVOR}: {
+    label: '${style_label}',
+    description: '${style_description}',
+  },
+} as const satisfies Record<StyleFlavorId, StyleFlavorMeta>
+EOF
+}
+
+write_single_style_web_index_html() {
+  cat > apps/web/index.html <<EOF
+<!DOCTYPE html>
+<html lang="ja" data-style="${BOOTSTRAP_STYLE_FLAVOR}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>oml-${SERVICE_NAME}</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/client.tsx"></script>
+  </body>
+</html>
+EOF
+}
+
+write_single_style_web_router() {
+  cat > apps/web/src/router.tsx <<EOF
+import {
+  createRootRoute,
+  createRoute,
+  createRouter,
+  Outlet,
+} from '@tanstack/react-router'
+import { lazy, useEffect } from 'react'
+import { defaultStyleFlavorId } from '@oml-${SERVICE_NAME}/ui/ui-matrix'
+
+function RootStyleFlavorLayout() {
+  useEffect(() => {
+    document.documentElement.dataset.style = defaultStyleFlavorId
+  }, [])
+
+  return <Outlet />
+}
+
+const RootLayout = () => <RootStyleFlavorLayout />
+
+const rootRoute = createRootRoute({
+  component: RootLayout,
+})
+
+const IndexPage = lazy(() => import('./routes/index'))
+
+const indexRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/',
+  component: IndexPage,
+})
+
+const routeTree = rootRoute.addChildren([indexRoute])
+
+export function createAppRouter() {
+  return createRouter({
+    routeTree,
+    defaultPreload: 'intent',
+  })
+}
+
+declare module '@tanstack/react-router' {
+  interface Register {
+    router: ReturnType<typeof createAppRouter>
+  }
+}
+EOF
+}
+
+write_single_style_www_root_route() {
+  cat > apps/www/src/routes/__root.tsx <<EOF
+import {
+  createRootRoute,
+  Link,
+  HeadContent,
+  Outlet,
+  Scripts,
+} from '@tanstack/react-router'
+import { defaultStyleFlavorId } from '@oml-${SERVICE_NAME}/ui/ui-matrix'
+import appCss from '../styles/globals.css?url'
+
+export const Route = createRootRoute({
+  head: () => ({
+    meta: [
+      { charSet: 'utf-8' },
+      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+      { title: 'oml-${SERVICE_NAME}' },
+      { name: 'description', content: 'oml-${SERVICE_NAME} - ohmylike.app service' },
+    ],
+    links: [
+      { rel: 'stylesheet', href: appCss },
+    ],
+  }),
+  component: RootComponent,
+  notFoundComponent: NotFoundComponent,
+})
+
+function NotFoundComponent() {
+  return (
+    <div style={{ textAlign: 'center', padding: '4rem 1rem' }}>
+      <h1>404</h1>
+      <p>ページが見つかりません</p>
+      <Link to="/">ホームに戻る</Link>
+    </div>
+  )
+}
+
+function RootComponent() {
+  return (
+    <html lang="ja" data-style={defaultStyleFlavorId}>
+      <head>
+        <HeadContent />
+      </head>
+      <body>
+        <div id="root">
+          <Outlet />
+        </div>
+        <Scripts />
+      </body>
+    </html>
+  )
+}
+EOF
+}
+
+remove_style_preview_files() {
+  rm -f packages/ui/src/lib/search-params.ts packages/ui/src/lib/search-params.test.ts
+
+  cat > packages/ui/src/index.ts <<'EOF'
+export * from './ui-matrix'
+EOF
+}
+
+remove_style_preview_dependencies() {
+  local package_json
+
+  require_command perl
+
+  for package_json in apps/web/package.json apps/www/package.json packages/ui/package.json; do
+    perl -0pi -e 's/\n\s+"nuqs":\s+"[^"]+",?//g' "${package_json}"
+  done
+}
+
+finalize_single_style_repo() {
+  write_single_style_ui_matrix
+  write_single_style_web_index_html
+  write_single_style_web_router
+  write_single_style_www_root_route
+  remove_style_preview_files
+  remove_style_preview_dependencies
+}
+
 apply_style_selection() {
   local flavor_name
 
@@ -518,6 +743,8 @@ apply_style_selection() {
 
     prune_style_flavor_markers "${flavor_name}"
   done
+
+  finalize_single_style_repo
 }
 
 apply_web_variant_selection() {

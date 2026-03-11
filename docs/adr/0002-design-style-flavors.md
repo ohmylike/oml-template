@@ -32,9 +32,11 @@ template には `terra` / `neutral` / `vivid` を保持する。
 - showcase や docs の基盤になるため
 - service repo へ戻す前の generic contract を一か所で持つため
 
-### 3. 生成 repo は single-flavor にする
+### 3. 生成 repo は phase 分割で single-flavor に寄せる
 
-bootstrap 後の repo は、選択した flavor だけを残す。
+最終的には bootstrap 後の repo を single-flavor にする。
+ただし現時点で先に固めるのは template の multi-flavor foundation と default 解決であり、
+未選択 flavor の prune は後続フェーズで扱う。
 
 prune 対象:
 
@@ -44,9 +46,20 @@ prune 対象:
 
 ### 4. root の `data-style` を正とする
 
-各 app の root は `data-style="__DEFAULT_STYLE_FLAVOR__"` を持ち、bootstrap がそれを選択 flavor に置換する。
+各 app の root は `data-style` を source of truth にする。
+
+- `oml-template` を直接起動するときは `neutral` を preview default にする
+- generated repo では bootstrap が `__DEFAULT_STYLE_FLAVOR__` を選択 flavor に置換する
+- `apps/web` / `apps/www` は `?style=terra|neutral|vivid` で preview override できる
 
 ### 5. default 解決ルール
+
+template preview:
+
+1. `?style` 明示指定
+2. 未指定時は `neutral`
+
+generated repo:
 
 1. `--style` 明示指定
 2. 将来の selection manifest 由来の値
@@ -54,8 +67,8 @@ prune 対象:
 
 ## 影響
 
-- template README と bootstrap help に `--style` を追加する。
-- `packages/ui` は flavor metadata と shared CSS を持つ。
+- template README に preview default / query override を書く。
+- `packages/ui` は flavor metadata、shared CSS、style parser を持つ。
 - catalogs schema 追加は後続フェーズで扱う。
 
 ## 非目標

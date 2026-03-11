@@ -12,11 +12,12 @@
 
 - `packages/ui` に style metadata と shared CSS を置く
 - template は全 flavor を保持する
-- app root に default style placeholder を入れる
+- template preview の default を `neutral` にする
+- `apps/web` / `apps/www` で `?style=` override を使って preview できる
 
 ## Phase 2: bootstrap single-flavor 化
 
-- `bootstrap.sh --style` を追加する
+- `bootstrap.sh --style` で注入した default flavor を起点にする
 - 生成 repo では未選択 flavor の CSS / metadata を prune する
 - fallback は `terra`
 

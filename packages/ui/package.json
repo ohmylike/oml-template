@@ -9,6 +9,7 @@
       "import": "./dist/index.js"
     },
     "./globals.css": "./src/styles/globals.css",
+    "./lib/*": "./src/lib/*.ts",
     "./ui-matrix": {
       "types": "./dist/ui-matrix.d.ts",
       "import": "./dist/ui-matrix.js"
@@ -19,5 +20,8 @@
   },
   "devDependencies": {
     "tailwindcss": "^4.2.1"
+  },
+  "dependencies": {
+    "nuqs": "^2.8.9"
   }
 }

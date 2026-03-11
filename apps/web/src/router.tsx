@@ -4,9 +4,26 @@ import {
   createRouter,
   Outlet,
 } from '@tanstack/react-router'
-import { lazy } from 'react'
+import { lazy, useEffect } from 'react'
+import { useQueryState } from 'nuqs'
+import { NuqsAdapter } from 'nuqs/adapters/tanstack-router'
+import { styleFlavorParser } from '@oml-__SERVICE_NAME__/ui/lib/search-params'
 
-const RootLayout = () => <Outlet />
+function RootStyleFlavorLayout() {
+  const [styleFlavor] = useQueryState('style', styleFlavorParser)
+
+  useEffect(() => {
+    document.documentElement.dataset.style = styleFlavor
+  }, [styleFlavor])
+
+  return <Outlet />
+}
+
+const RootLayout = () => (
+  <NuqsAdapter>
+    <RootStyleFlavorLayout />
+  </NuqsAdapter>
+)
 
 const rootRoute = createRootRoute({
   component: RootLayout,

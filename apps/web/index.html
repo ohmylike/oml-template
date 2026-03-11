@@ -4,6 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>oml-__SERVICE_NAME__</title>
+    <script>
+      (() => {
+        const unresolvedDefaultStyleFlavor = '__DEFAULT' + '_STYLE_FLAVOR__'
+        if (document.documentElement.dataset.style === unresolvedDefaultStyleFlavor) {
+          document.documentElement.dataset.style = 'neutral'
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>
