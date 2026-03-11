@@ -222,8 +222,18 @@ LP・HP は複数のセクションを組み合わせて構成する。
 
 | リポジトリ | 役割 |
 |---|---|
-| **oml-sandbox** | 実験・検証。本ドキュメントの初期作成場所 |
-| **oml-template** | 汎化されたスキャフォールド。sandbox で検証後に backport |
+| **oml-sandbox** | 実験・検証・migration rehearsal。generic 化できる候補の発見場所 |
+| **oml-template** | 汎化されたスキャフォールド。backport の受け皿であり、service へ返す migration source |
 | **oml-catalogs** | 選択 UI、manifest スキーマ、ソリューションパターンの正式定義 |
+| **oml-\*** service | サービス固有の業務実装。template の generic 変更を opt-in で受け取る対象 |
 
-> 開発フロー: sandbox で開発 → template に汎化 → catalogs から生成
+> 基本フロー: sandbox / service で開発 → generic な差分を template に backport → 必要な service に template から migration
+
+### AI 協調 migration の原則
+
+- AI は差分検出、所有権分類、patch 案作成、検証コマンド整理を補助する
+- template から service への反映は一括同期ではなく、小さな migration unit ごとに review する
+- service 固有 copy、ドメイン、個別連携は自動上書きしない
+- ownership が曖昧な差分や rename / delete を伴う差分は、人が判断してから進める
+
+> 詳細は [ADR 0004: Template-Service Feedback Loop and Safe Migration](adr/0004-template-service-feedback-loop.md) を参照。
