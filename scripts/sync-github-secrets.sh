@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Sync GitHub Actions secrets from 1Password into the current repo.
+Sync GitHub Actions secrets and variables from 1Password into the current repo.
 
 Usage:
   ./scripts/sync-github-secrets.sh \
@@ -13,8 +13,8 @@ Usage:
 Options:
   --repo <owner/name>                     Override the target GitHub repo.
   --turso-production-auth-token-ref <ref> Required 1Password secret reference for the per-service production DB auth token.
-  --enable-production-deploy              Set OML_ENABLE_PRODUCTION_DEPLOY=1 after secrets sync.
-  --dry-run                               Print the refs that would be synced without writing secrets.
+  --enable-production-deploy              Set OML_ENABLE_PRODUCTION_DEPLOY=1 after config sync.
+  --dry-run                               Print the refs that would be synced without writing secrets or variables.
   -h, --help                              Show this help.
 
 Environment overrides:
@@ -109,7 +109,7 @@ sync_secret() {
   local secret_ref="$2"
 
   if $DRY_RUN; then
-    echo "[dry-run] ${secret_name} <= ${secret_ref}"
+    echo "[dry-run] secret ${secret_name} <= ${secret_ref}"
     return
   fi
 
@@ -117,8 +117,21 @@ sync_secret() {
   op read "$secret_ref" | gh secret set "$secret_name" --repo "$REPO"
 }
 
+sync_variable() {
+  local variable_name="$1"
+  local variable_ref="$2"
+
+  if $DRY_RUN; then
+    echo "[dry-run] variable ${variable_name} <= ${variable_ref}"
+    return
+  fi
+
+  echo "Syncing variable ${variable_name} to ${REPO}"
+  gh variable set "$variable_name" --repo "$REPO" --body "$(op read "$variable_ref")"
+}
+
 sync_secret "CLOUDFLARE_API_TOKEN" "$OP_CLOUDFLARE_API_TOKEN_REF"
-sync_secret "CLOUDFLARE_ACCOUNT_ID" "$OP_CLOUDFLARE_ACCOUNT_ID_REF"
+sync_variable "CLOUDFLARE_ACCOUNT_ID" "$OP_CLOUDFLARE_ACCOUNT_ID_REF"
 sync_secret "TURSO_API_TOKEN" "$OP_TURSO_API_TOKEN_REF"
 sync_secret "TURSO_PREVIEW_AUTH_TOKEN" "$OP_TURSO_PREVIEW_AUTH_TOKEN_REF"
 sync_secret "TURSO_PRODUCTION_AUTH_TOKEN" "$TURSO_PRODUCTION_AUTH_TOKEN_REF"
@@ -133,5 +146,5 @@ if $ENABLE_PRODUCTION_DEPLOY; then
 fi
 
 if ! $DRY_RUN; then
-  echo "Done. GitHub Actions secrets are synced for ${REPO}."
+  echo "Done. GitHub Actions secrets and variables are synced for ${REPO}."
 fi
